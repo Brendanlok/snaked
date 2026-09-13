@@ -340,13 +340,18 @@ function draw() {
   for (let y = 0; y <= ROWS; y++) { ctx.moveTo(0, y * CELL + .5); ctx.lineTo(W, y * CELL + .5); }
   ctx.stroke();
 
-  // stone: flashes white the moment it is shed, then settles into its colour
+  // stone: flashes white the moment it is shed, then settles into a dimmed version of its colour.
+  // It has to read as dead matter at a glance - at full speed the snake's own body and a wall
+  // must never be confused, so stone is darker, flatter and squarer than anything alive.
   for (let i = 0; i < stones.length; i++) {
     if (!stones[i]) continue;
-    const age = elapsed - stoneBorn[i], base = stoneColor(stones[i]);
+    const age = elapsed - stoneBorn[i], base = mix(stoneColor(stones[i]), [13, 20, 32], 0.45);
     const col = age < 0.35 ? mix([255, 255, 255], base, age / 0.35) : base;
+    const x = cx(i) * CELL + 1.5, y = cy(i) * CELL + 1.5;
     ctx.fillStyle = rgb(col);
-    rrect(cx(i) * CELL + 1.5, cy(i) * CELL + 1.5, CELL - 3, CELL - 3, 4);
+    rrect(x, y, CELL - 3, CELL - 3, 2);
+    ctx.fillStyle = 'rgba(255,255,255,.10)';
+    ctx.fillRect(x + 2, y + 1.5, CELL - 7, 2);
   }
 
   if (apple >= 0 && mode !== 'won') {
@@ -356,8 +361,16 @@ function draw() {
     ctx.restore();
   }
 
-  // the snake: cyan head fading to purple, red when it dies
+  // the snake: cyan head fading to purple, red when it dies. Neighbouring segments are bridged so
+  // the body reads as one continuous creature rather than loose tiles that look like stone.
   const n = snake.length, dying = mode === 'dying';
+  for (let k = n - 1; k >= 1; k--) {
+    const a = snake[k], b = snake[k - 1], f = n > 1 ? (k - 0.5) / (n - 1) : 0;
+    ctx.fillStyle = rgb(dying ? [255, 90, 110] : mix([87, 211, 255], [185, 139, 255], f));
+    const x = Math.min(cx(a), cx(b)) * CELL + 2.5, y = Math.min(cy(a), cy(b)) * CELL + 2.5;
+    ctx.fillRect(x + (cx(a) !== cx(b) ? CELL / 2 : 0), y + (cy(a) !== cy(b) ? CELL / 2 : 0),
+                 cx(a) !== cx(b) ? CELL : CELL - 5, cy(a) !== cy(b) ? CELL : CELL - 5);
+  }
   for (let k = n - 1; k >= 0; k--) {
     const i = snake[k], f = n > 1 ? k / (n - 1) : 0;
     const col = dying ? [255, 90, 110] : mix([87, 211, 255], [185, 139, 255], f);
