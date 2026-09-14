@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>Shed — prototype</title>
+<title>Snaked — Snake, in reverse</title>
+<meta name="description" content="Snake, in reverse. Every apple makes you shorter and faster, and whatever you shed turns to stone. Eat the last apple at length 1 to win.">
+<meta property="og:title" content="Snaked — Snake, in reverse">
+<meta property="og:description" content="Every apple makes you shorter and faster, and whatever you shed turns to stone.">
+<meta name="twitter:card" content="summary">
 <style>
   /* Palette, tiles and buttons are copied from Breakin so the games read as one family. */
   [hidden]{display:none!important;}
@@ -85,9 +89,7 @@
   #fbSend{background:#5fb0ff;color:#05121f;}
   #fbClose{background:#1b2637;color:#cdd6e4;}
   #fbOut{font-size:12px;color:#8fd6a0;margin-top:8px;min-height:14px;}
-  #fbOut.bad{color:#ff9d8a;}
-  .proto{font-size:10px!important;letter-spacing:.24em;text-transform:uppercase;color:#4d5b70!important;margin-top:14px!important;}
-</style>
+  #fbOut.bad{color:#ff9d8a;}</style>
 </head>
 <body>
 <div id="wrap"><canvas id="cv"></canvas></div>
@@ -104,14 +106,12 @@
 </div>
 <div id="overlay">
   <div class="badge" id="badge">Snake, in reverse</div>
-  <h1 id="title">SHED</h1>
+  <h1 id="title">SNAKED</h1>
   <p id="msg">You start long. <b>Every apple makes you shorter — and faster.</b> Whatever you shed turns to stone. Eat the last apple at length 1 to win.</p>
   <div id="stats" hidden></div>
   <button id="startBtn"><span class="lbl" id="startLbl">Play</span><span class="sub" id="startSub">or press Space · arrow keys steer</span></button>
   <p class="how touch-only">steer with the arrow buttons, or swipe</p>
-  <button id="fbLink">Send feedback</button>
-  <p class="proto">prototype</p>
-</div>
+  <button id="fbLink">Send feedback</button></div>
 <div id="fb" hidden>
   <div class="fbpanel">
     <div class="atitle">Send feedback</div>
@@ -481,7 +481,7 @@ addEventListener('blur', pause);
 function showResult(won) {
   mode = 'over';
   $('badge').textContent = won ? 'Fully shed' : deathReason;
-  $('title').textContent = won ? 'SHED!' : 'GAME OVER';
+  $('title').textContent = won ? 'YOU WIN!' : 'GAME OVER';
   $('msg').innerHTML = won ? 'You ate your way down to nothing.' : 'Shed the rest of it next time.';
   $('stats').hidden = false;
   $('stats').innerHTML = won
