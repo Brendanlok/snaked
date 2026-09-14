@@ -122,7 +122,8 @@ function mulberry32(a) {
 // ---- state ---------------------------------------------------------------------------
 let mode = 'menu', runKind = 'attract', endT = 0;
 let rng, startLen, snake, occ, stones, stoneBorn, stoneCount, apple, dir, queue, elapsed, apples, acc;
-let parts = [], shake = 0, deathReason = '';
+let parts = [], shake = 0, deathReason = '', countT = 0;
+const COUNT_S = 3;          // 3-2-1 before a run, and again when coming back from a pause. Clock stopped, so times are unchanged.
 
 const cx = i => i % COLS, cy = i => (i / COLS) | 0;
 function step1(i, d) {
@@ -256,16 +257,17 @@ function botSteer() {
 }
 
 // ---- player input --------------------------------------------------------------------
+const live = () => mode === 'play' || mode === 'count';   // turns can be lined up during the countdown
 function turn(d) {
-  if (mode !== 'play') return;
+  if (!live()) return;
   const last = queue.length ? queue[queue.length - 1] : dir;
   if (d === last || (snake.length > 1 && d === OPP[last])) return;
   if (queue.length < 3) queue.push(d);                     // buffered, so fast double-turns aren't dropped
 }
 let swipe = null;
-document.addEventListener('pointerdown', e => { if (mode === 'play' && !e.target.closest('#pad')) swipe = {x: e.clientX, y: e.clientY}; });
+document.addEventListener('pointerdown', e => { if (live() && !e.target.closest('#pad')) swipe = {x: e.clientX, y: e.clientY}; });
 document.addEventListener('pointermove', e => {
-  if (!swipe || mode !== 'play') return;
+  if (!swipe || !live()) return;
   const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
   if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE) return;
   turn(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'R' : 'L') : (dy > 0 ? 'D' : 'U'));
@@ -285,7 +287,7 @@ for (const b of pad.querySelectorAll('button')) {
 }
 const KEYS = {ArrowUp: 'U', ArrowDown: 'D', ArrowLeft: 'L', ArrowRight: 'R', w: 'U', s: 'D', a: 'L', d: 'R', W: 'U', S: 'D', A: 'L', D: 'R'};
 addEventListener('keydown', e => {
-  if (KEYS[e.key] && mode === 'play') { e.preventDefault(); turn(KEYS[e.key]); return; }
+  if (KEYS[e.key] && live()) { e.preventDefault(); turn(KEYS[e.key]); return; }
   if ((e.key === ' ' || e.key === 'Enter') && !$('overlay').hidden) { e.preventDefault(); startPlay(); }
 });
 
@@ -308,6 +310,9 @@ function step(dt) {
       if (mode === 'attract') botSteer();
       tick();
     }
+  } else if (mode === 'count') {
+    countT -= dt;
+    if (countT <= 0) { mode = 'play'; acc = 0; }
   } else if (mode === 'dying' || mode === 'won') {
     endT -= dt;
     if (endT <= 0) {
@@ -406,20 +411,39 @@ function draw() {
   for (const p of parts) { ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 2.5)); ctx.fillStyle = p.col; ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3); }
   ctx.globalAlpha = 1;
 
-  if (mode === 'play' && elapsed < 2.5) {
+  if ((mode === 'play' || (mode === 'count' && elapsed === 0)) && elapsed < 2.5) {
     ctx.fillStyle = 'rgba(159,173,193,' + Math.min(0.8, 2.5 - elapsed) + ')';
     ctx.font = '600 13px -apple-system,Segoe UI,Roboto,sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(isTouch ? 'tap the arrows to steer' : 'arrow keys to steer', W / 2, 40);
+  }
+  if (mode === 'count') {                                      // big 3-2-1, each number popping in and settling
+    const nLeft = Math.ceil(countT), f = nLeft - countT;       // f: 0 -> 1 through each second
+    ctx.fillStyle = 'rgba(9,12,18,.45)'; ctx.fillRect(0, 0, W, H);
+    ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    if (elapsed > 0) { ctx.fillStyle = '#9fadc1'; ctx.font = '700 13px -apple-system,Segoe UI,Roboto,sans-serif'; ctx.fillText('PAUSED', W / 2, H / 2 - 70); }
+    ctx.globalAlpha = Math.min(1, 1.6 - f);
+    ctx.font = '800 ' + Math.round(96 - 22 * Math.min(1, f * 3)) + 'px -apple-system,Segoe UI,Roboto,sans-serif';
+    ctx.shadowColor = 'rgba(95,176,255,.6)'; ctx.shadowBlur = 32; ctx.fillStyle = '#eaf2ff';
+    ctx.fillText(nLeft, W / 2, H / 2);
+    ctx.restore();
   }
 }
 
 // ---- screens -------------------------------------------------------------------------
 const $ = id => document.getElementById(id);
 function startPlay() {
-  runKind = 'play'; newRun(); mode = 'play'; swipe = null;
+  runKind = 'play'; newRun(); mode = 'count'; countT = COUNT_S; swipe = null;
   pad.classList.remove('idle');
   $('overlay').hidden = true; $('hud').hidden = false;
+  $('hTime').textContent = '0.0'; $('hLen').textContent = snake.length; $('hWalls').textContent = 0;
 }
+// A locked phone, a notification or a switched tab freezes the run; coming back counts 3-2-1 again.
+function pause() {
+  if (!live()) return;
+  mode = 'count'; countT = COUNT_S; queue.length = 0; swipe = null;
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+addEventListener('blur', pause);
 function showResult(won) {
   mode = 'over';
   $('badge').textContent = won ? 'Fully shed' : deathReason;
