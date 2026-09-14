@@ -342,16 +342,17 @@ function turn(d) {
   if (queue.length < 3) queue.push(d);                     // buffered, so fast double-turns aren't dropped
 }
 let swipe = null;
-document.addEventListener('pointerdown', e => { if (live() && !e.target.closest('#pad, #snd')) swipe = {x: e.clientX, y: e.clientY}; });
+document.addEventListener('pointerdown', e => { if (live() && !e.target.closest('#pad, #snd')) swipe = {x: e.clientX, y: e.clientY, moved: false}; });
 document.addEventListener('pointermove', e => {
   if (!swipe || !live()) return;
   const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
   if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE) return;
   turn(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'R' : 'L') : (dy > 0 ? 'D' : 'U'));
-  swipe = {x: e.clientX, y: e.clientY};                      // re-anchor: one continuous drag can carry several turns
+  swipe = {x: e.clientX, y: e.clientY, moved: true};         // re-anchor: one continuous drag can carry several turns
 });
 const endSwipe = () => { swipe = null; };
-document.addEventListener('pointerup', endSwipe);
+// a tap or click that isn't a swipe knocks one second off the 3-2-1
+document.addEventListener('pointerup', () => { if (swipe && !swipe.moved && mode === 'count') skipCount(); endSwipe(); });
 document.addEventListener('pointercancel', endSwipe);
 // On-screen arrows: a turn lands on pointerdown, the instant a thumb touches, not on release.
 const isTouch = matchMedia('(pointer:coarse)').matches || navigator.maxTouchPoints > 0 || /[?&]touch/.test(location.search);
@@ -365,6 +366,7 @@ for (const b of pad.querySelectorAll('button')) {
 const KEYS = {ArrowUp: 'U', ArrowDown: 'D', ArrowLeft: 'L', ArrowRight: 'R', w: 'U', s: 'D', a: 'L', d: 'R', W: 'U', S: 'D', A: 'L', D: 'R'};
 addEventListener('keydown', e => {
   if (KEYS[e.key] && live()) { e.preventDefault(); turn(KEYS[e.key]); return; }
+  if ((e.key === ' ' || e.code === 'Space') && mode === 'count') { e.preventDefault(); if (!e.repeat) skipCount(); return; }
   if ((e.key === ' ' || e.code === 'Space' || e.key === 'Enter') && !$('overlay').hidden && $('fb').hidden && !e.repeat) { e.preventDefault(); startPlay(); }
 });
 // Keys only reach the game once the page has focus (a fresh tab with the address bar focused, or an
@@ -510,7 +512,10 @@ function draw() {
     ctx.globalAlpha = Math.min(1, 1.6 - f);
     ctx.font = '800 ' + Math.round(96 - 22 * Math.min(1, f * 3)) + 'px -apple-system,Segoe UI,Roboto,sans-serif';
     ctx.shadowColor = 'rgba(95,176,255,.6)'; ctx.shadowBlur = 32; ctx.fillStyle = '#eaf2ff';
-    ctx.fillText(nLeft, W / 2, H / 2);
+    ctx.fillText(Math.max(1, nLeft), W / 2, H / 2);
+    ctx.globalAlpha = 0.8; ctx.shadowBlur = 0; ctx.fillStyle = '#9fadc1';
+    ctx.font = '600 13px -apple-system,Segoe UI,Roboto,sans-serif';
+    ctx.fillText(isTouch ? 'tap to skip' : 'space or click to skip', W / 2, H / 2 + 72);
     ctx.restore();
   }
 }
@@ -525,6 +530,11 @@ function startPlay() {
   $('hTime').textContent = '0.0'; $('hLen').textContent = snake.length; $('hWalls').textContent = 0;
 }
 // A locked phone, a notification or a switched tab freezes the run; coming back counts 3-2-1 again.
+// Space, or a tap/click, knocks one second off the 3-2-1; skipping past 1 starts the run on the next frame.
+function skipCount() {
+  countT = Math.ceil(countT - 1e-6) - 1;
+  if (countT > 0) tone(440, 0.08, 'square', 0.05);
+}
 function pause() {
   if (!live()) return;
   mode = 'count'; countT = COUNT_S; queue.length = 0; swipe = null;
