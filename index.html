@@ -89,7 +89,15 @@
   #fbSend{background:#5fb0ff;color:#05121f;}
   #fbClose{background:#1b2637;color:#cdd6e4;}
   #fbOut{font-size:12px;color:#8fd6a0;margin-top:8px;min-height:14px;}
-  #fbOut.bad{color:#ff9d8a;}</style>
+  #fbOut.bad{color:#ff9d8a;}
+  /* sound on/off: top-right corner, clear of the centred score tiles; same secondary-button style as the arrows */
+  #snd{position:fixed;z-index:40;top:calc(12px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));
+    width:40px;height:40px;display:flex;align-items:center;justify-content:center;padding:0;
+    color:#cdd6e4;background:#18222f;border:1px solid #2f3f57;border-radius:12px;cursor:pointer;
+    -webkit-tap-highlight-color:transparent;}
+  #snd svg{width:22px;height:22px;}
+  #snd.off{color:#6b7a90;}
+  #snd.off .w, #snd:not(.off) .x{display:none;}</style>
 </head>
 <body>
 <div id="wrap"><canvas id="cv"></canvas></div>
@@ -121,6 +129,7 @@
     <div id="fbOut"></div>
   </div>
 </div>
+<button id="snd" aria-label="Sound on"><svg viewBox="0 0 24 24"><path d="M3 9h4l5-4v14l-5-4H3z" fill="currentColor"/><path class="w" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="x" d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
 <script>
 // ---- board ---------------------------------------------------------------------------
 const COLS = 15, ROWS = 24, CELL = 24, W = COLS * CELL, H = ROWS * CELL;
@@ -150,6 +159,7 @@ function mulberry32(a) {
 // ---- state ---------------------------------------------------------------------------
 let mode = 'menu', runKind = 'attract', endT = 0;
 let rng, startLen, snake, occ, stones, stoneBorn, stoneCount, apple, dir, queue, elapsed, apples, acc;
+let prevHead, lastTail, chomp = -1;   // where the head came from, the cell the tail just left, and an apple the head is still gliding into
 let parts = [], shake = 0, deathReason = '', countT = 0;
 const COUNT_S = 3;          // 3-2-1 before a run, and again when coming back from a pause. Clock stopped, so times are unchanged.
 
@@ -171,6 +181,7 @@ function newRun() {
   for (let y = ROWS - 2, flip = false; y >= 1 && path.length < startLen; y--, flip = !flip)
     for (let k = 0; k < COLS - 2 && path.length < startLen; k++) path.push(y * COLS + (flip ? COLS - 2 - k : 1 + k));
   snake = path.reverse();                                    // head first
+  prevHead = snake[0]; lastTail = snake[snake.length - 1]; chomp = -1;
   for (const i of snake) occ[i]++;
   placeApple();
 }
@@ -205,32 +216,44 @@ function interval() {
 }
 
 function tick() {
+  if (chomp >= 0) chompFx();
   if (queue.length) { const d = queue.shift(); if (!(snake.length > 1 && d === OPP[dir])) dir = d; }
   const head = snake[0], ni = step1(head, dir), tail = snake[snake.length - 1];
   if (ni < 0) return die('Hit the edge');
   if (stones[ni]) return die('Hit your own stone');
   if (occ[ni] && ni !== tail) return die('Ran into yourself');
+  prevHead = head; lastTail = tail;
   occ[tail]--; snake.pop();                                  // the tail moves off first, so chasing it is legal
   snake.unshift(ni); occ[ni]++;
   if (ni === apple) {
     apples++;
-    burst(ni, '#ffd25f', 14);
-    if (snake.length === 1) return win();
+    if (snake.length === 1) { burst(ni, '#ffd25f', 14); return win(); }
     const k = Math.min(SHED, snake.length - 1);
     for (let s = 0; s < k; s++) {
       const t = snake.pop(); occ[t]--;
       stones[t] = ++stoneCount; stoneBorn[t] = elapsed;
     }
+    lastTail = snake[snake.length - 1];                      // the shed pieces snap off rather than sliding
+    chomp = ni;                                              // the pop waits until the gliding head actually reaches the apple
     placeApple();
   }
+}
+function chompFx() {
+  burst(chomp, '#ffd25f', 14); chomp = -1;
+  const f = 440 * Math.pow(2, (startLen - snake.length) / 24);   // each apple's blip is pitched higher as you shrink
+  tone(f, 0.09, 'square', 0.06, f * 1.5);
+  tone(120, 0.14, 'triangle', 0.14, 60, 0.04);              // the thud of pieces turning to stone
 }
 
 function die(reason) {
   deathReason = reason; mode = 'dying'; endT = runKind === 'play' ? 1.0 : 1.2;
+  acc = interval();                                          // the body finishes its glide and stops dead
   shake = 1; burst(snake[0], '#ff5a6e', 28);
+  tone(240, 0.5, 'sawtooth', 0.08, 50);
 }
 function win() {
-  mode = 'won'; endT = 1.4;
+  mode = 'won'; endT = 1.4; acc = interval();
+  [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.16, 'square', 0.06, 0, i * 0.09));
   for (let n = 0; n < 4; n++) burst(snake[0], n % 2 ? '#ffd25f' : '#57d3ff', 26);
 }
 
@@ -284,6 +307,32 @@ function botSteer() {
   if (choice) { queue.length = 0; queue.push(choice); }
 }
 
+// ---- sound: short synthesized blips (no audio files), on by default and remembered ----------------
+let actx = null, soundOn = true;
+try { soundOn = localStorage.getItem('snaked-sound') !== '0'; } catch (e) {}
+// Browsers only allow audio after a tap or key press, so the audio engine starts on the first one.
+function unlockAudio() {
+  const A = window.AudioContext || window.webkitAudioContext;
+  if (!actx && A) actx = new A();
+  if (actx && actx.state === 'suspended') actx.resume();
+}
+addEventListener('pointerdown', unlockAudio, true); addEventListener('keydown', unlockAudio, true);
+function tone(freq, dur, type, vol, slideTo, delay) {
+  if (!soundOn || !actx || runKind !== 'play') return;         // the demo bot behind the menu stays silent
+  const t0 = actx.currentTime + (delay || 0), o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t0);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+  g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(actx.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+}
+const sndBtn = document.getElementById('snd');
+function showSound() { sndBtn.classList.toggle('off', !soundOn); sndBtn.setAttribute('aria-label', soundOn ? 'Sound on' : 'Sound off'); }
+sndBtn.addEventListener('click', () => {
+  soundOn = !soundOn; showSound(); sndBtn.blur();
+  try { localStorage.setItem('snaked-sound', soundOn ? '1' : '0'); } catch (e) {}
+});
+showSound();
+
 // ---- player input --------------------------------------------------------------------
 const live = () => mode === 'play' || mode === 'count';   // turns can be lined up during the countdown
 function turn(d) {
@@ -293,7 +342,7 @@ function turn(d) {
   if (queue.length < 3) queue.push(d);                     // buffered, so fast double-turns aren't dropped
 }
 let swipe = null;
-document.addEventListener('pointerdown', e => { if (live() && !e.target.closest('#pad')) swipe = {x: e.clientX, y: e.clientY}; });
+document.addEventListener('pointerdown', e => { if (live() && !e.target.closest('#pad, #snd')) swipe = {x: e.clientX, y: e.clientY}; });
 document.addEventListener('pointermove', e => {
   if (!swipe || !live()) return;
   const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
@@ -344,9 +393,12 @@ function step(dt) {
       if (mode === 'attract') botSteer();
       tick();
     }
+    if (chomp >= 0 && acc >= interval() * 0.85) chompFx();
   } else if (mode === 'count') {
-    countT -= dt;
-    if (countT <= 0) { mode = 'play'; acc = 0; }
+    const shown = Math.ceil(countT);
+    countT -= dt;                                            // acc is kept, so a resumed run picks up mid-glide without a jump
+    if (countT <= 0) { mode = 'play'; tone(880, 0.16, 'square', 0.06); }
+    else if (Math.ceil(countT) < shown) tone(440, 0.08, 'square', 0.05);
   } else if (mode === 'dying' || mode === 'won') {
     endT -= dt;
     if (endT <= 0) {
@@ -406,34 +458,34 @@ function draw() {
     ctx.fillRect(x + 2, y + 1.5, CELL - 7, 2);
   }
 
-  if (apple >= 0 && mode !== 'won') {
+  for (const a of [apple, chomp]) {
+    if (a < 0 || mode === 'won') continue;
     const r = CELL * 0.3 + Math.sin(performance.now() / 120) * 1.3;
     ctx.save(); ctx.shadowColor = '#ffd25f'; ctx.shadowBlur = 16; ctx.fillStyle = '#ffd25f';
-    ctx.beginPath(); ctx.arc(cx(apple) * CELL + CELL / 2, cy(apple) * CELL + CELL / 2, r, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx(a) * CELL + CELL / 2, cy(a) * CELL + CELL / 2, r, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
 
   // the snake: cyan head fading to purple, red when it dies. Neighbouring segments are bridged so
   // the body reads as one continuous creature rather than loose tiles that look like stone.
-  const n = snake.length, dying = mode === 'dying';
-  for (let k = n - 1; k >= 1; k--) {
-    const a = snake[k], b = snake[k - 1], f = n > 1 ? (k - 0.5) / (n - 1) : 0;
-    ctx.fillStyle = rgb(dying ? [255, 90, 110] : mix([87, 211, 255], [185, 139, 255], f));
-    const x = Math.min(cx(a), cx(b)) * CELL + 2.5, y = Math.min(cy(a), cy(b)) * CELL + 2.5;
-    ctx.fillRect(x + (cx(a) !== cx(b) ? CELL / 2 : 0), y + (cy(a) !== cy(b) ? CELL / 2 : 0),
-                 cx(a) !== cx(b) ? CELL : CELL - 5, cy(a) !== cy(b) ? CELL : CELL - 5);
+  // The rules still move it one whole cell per tick; it is drawn part-way through its current move
+  // (head sliding into its new cell, tail sliding out of the old one), so it glides instead of hopping.
+  const n = snake.length, dying = mode === 'dying', t = Math.min(1, acc / interval());
+  const at = (a, b) => [(cx(a) + (cx(b) - cx(a)) * t + 0.5) * CELL, (cy(a) + (cy(b) - cy(a)) * t + 0.5) * CELL];
+  const pts = [at(prevHead, snake[0])];
+  for (let k = 1; k < n; k++) pts.push([(cx(snake[k]) + 0.5) * CELL, (cy(snake[k]) + 0.5) * CELL]);
+  if (n > 1) pts.push(at(lastTail, snake[n - 1]));
+  ctx.lineWidth = CELL - 5; ctx.lineCap = 'round';
+  for (let k = pts.length - 1; k >= 1; k--) {
+    ctx.strokeStyle = rgb(dying ? [255, 90, 110] : mix([87, 211, 255], [185, 139, 255], (k - 0.5) / (pts.length - 1)));
+    ctx.beginPath(); ctx.moveTo(pts[k][0], pts[k][1]); ctx.lineTo(pts[k - 1][0], pts[k - 1][1]); ctx.stroke();
   }
-  for (let k = n - 1; k >= 0; k--) {
-    const i = snake[k], f = n > 1 ? k / (n - 1) : 0;
-    const col = dying ? [255, 90, 110] : mix([87, 211, 255], [185, 139, 255], f);
-    const inset = k === 0 ? 1 : 2.5;
-    if (k === 0) { ctx.save(); ctx.shadowColor = rgb(col); ctx.shadowBlur = 16; }
-    ctx.fillStyle = rgb(col);
-    rrect(cx(i) * CELL + inset, cy(i) * CELL + inset, CELL - inset * 2, CELL - inset * 2, k === 0 ? 7 : 5);
-    if (k === 0) ctx.restore();
-  }
-  if (n) {                                                    // eyes, looking where it's heading
-    const h = snake[0], hx = cx(h) * CELL + CELL / 2, hy = cy(h) * CELL + CELL / 2, [dx, dy] = DIRS[dir];
+  const [hx, hy] = pts[0], hcol = rgb(dying ? [255, 90, 110] : [87, 211, 255]);
+  ctx.save(); ctx.shadowColor = hcol; ctx.shadowBlur = 16; ctx.fillStyle = hcol;
+  rrect(hx - CELL / 2 + 1, hy - CELL / 2 + 1, CELL - 2, CELL - 2, 7);
+  ctx.restore();
+  {                                                           // eyes, looking where it's heading
+    const [dx, dy] = DIRS[dir];
     ctx.fillStyle = '#05121f';
     for (const s of [-1, 1]) {
       ctx.beginPath();
@@ -467,6 +519,7 @@ function draw() {
 const $ = id => document.getElementById(id);
 function startPlay() {
   runKind = 'play'; newRun(); mode = 'count'; countT = COUNT_S; swipe = null;
+  tone(440, 0.08, 'square', 0.05);                           // the "3" of the countdown
   pad.classList.remove('idle');
   $('overlay').hidden = true; $('hud').hidden = false;
   $('hTime').textContent = '0.0'; $('hLen').textContent = snake.length; $('hWalls').textContent = 0;
