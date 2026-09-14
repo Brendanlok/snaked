@@ -89,7 +89,7 @@
   <h1 id="title">SHED</h1>
   <p id="msg">You start long. <b>Every apple makes you shorter — and faster.</b> Whatever you shed turns to stone. Eat the last apple at length 1 to win.</p>
   <div id="stats" hidden></div>
-  <button id="startBtn"><span class="lbl" id="startLbl">Play</span><span class="sub">or press Space · arrow keys steer</span></button>
+  <button id="startBtn"><span class="lbl" id="startLbl">Play</span><span class="sub" id="startSub">or press Space · arrow keys steer</span></button>
   <p class="how touch-only">steer with the arrow buttons, or swipe</p>
   <p class="proto">prototype</p>
 </div>
@@ -288,8 +288,14 @@ for (const b of pad.querySelectorAll('button')) {
 const KEYS = {ArrowUp: 'U', ArrowDown: 'D', ArrowLeft: 'L', ArrowRight: 'R', w: 'U', s: 'D', a: 'L', d: 'R', W: 'U', S: 'D', A: 'L', D: 'R'};
 addEventListener('keydown', e => {
   if (KEYS[e.key] && live()) { e.preventDefault(); turn(KEYS[e.key]); return; }
-  if ((e.key === ' ' || e.key === 'Enter') && !$('overlay').hidden) { e.preventDefault(); startPlay(); }
+  if ((e.key === ' ' || e.code === 'Space' || e.key === 'Enter') && !$('overlay').hidden && !e.repeat) { e.preventDefault(); startPlay(); }
 });
+// Keys only reach the game once the page has focus (a fresh tab with the address bar focused, or an
+// embed like itch.io before its first click), so the menu only offers Space when it will actually work.
+function keyHint() {
+  $('startSub').textContent = document.hasFocus() ? 'or press Space · arrow keys steer' : 'click to play · then arrow keys steer';
+}
+addEventListener('focus', keyHint); addEventListener('blur', keyHint);
 
 // ---- simulation ----------------------------------------------------------------------
 function burst(i, col, n) {
@@ -464,7 +470,7 @@ function hud() {
 $('startBtn').addEventListener('click', startPlay);
 
 // ---- loop ----------------------------------------------------------------------------
-runKind = 'attract'; newRun(); mode = 'attract'; fit();
+runKind = 'attract'; newRun(); mode = 'attract'; fit(); keyHint();
 addEventListener('resize', fit);
 let last = 0;
 function frame(ts) {
