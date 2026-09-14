@@ -68,6 +68,24 @@
   #pad button.on{background:#2a3a52;border-color:#48a2f3;color:#84c4ff;box-shadow:0 0 18px rgba(72,162,243,.35);}
   #pad .u{grid-column:2;grid-row:1;} #pad .l{grid-column:1;grid-row:2;}
   #pad .d{grid-column:2;grid-row:2;} #pad .r{grid-column:3;grid-row:2;}
+  /* feedback link + dialog: copied from Breakin */
+  #fbLink{background:none;border:0;color:#6b7a90;font-size:12px;letter-spacing:.03em;
+    cursor:pointer;padding:4px;margin-top:12px;text-decoration:underline;font-family:inherit;}
+  #fb{position:fixed;inset:0;z-index:50;display:flex;align-items:safe center;justify-content:center;overflow-y:auto;
+    background:rgba(4,7,11,.82);padding:20px;}
+  #fb .fbpanel{background:#0d1420;border:1px solid #2b3a52;border-radius:14px;padding:18px;
+    width:340px;max-width:92vw;color:#e8edf4;text-align:left;}
+  #fb .atitle{font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:#7f8ca0;margin-bottom:12px;}
+  #fb input,#fb textarea{width:100%;box-sizing:border-box;padding:10px 12px;font-size:16px;border-radius:9px;
+    border:1px solid #33455f;background:#0b1220;color:#e8edf4;outline:none;margin-bottom:10px;font-family:inherit;
+    -webkit-user-select:text;user-select:text;touch-action:auto;}
+  #fb textarea{height:100px;resize:vertical;}
+  #fb .fbrow{display:flex;gap:8px;}
+  #fb button{padding:10px 18px;font-size:14px;font-weight:700;border:0;border-radius:9px;cursor:pointer;}
+  #fbSend{background:#5fb0ff;color:#05121f;}
+  #fbClose{background:#1b2637;color:#cdd6e4;}
+  #fbOut{font-size:12px;color:#8fd6a0;margin-top:8px;min-height:14px;}
+  #fbOut.bad{color:#ff9d8a;}
   .proto{font-size:10px!important;letter-spacing:.24em;text-transform:uppercase;color:#4d5b70!important;margin-top:14px!important;}
 </style>
 </head>
@@ -91,7 +109,17 @@
   <div id="stats" hidden></div>
   <button id="startBtn"><span class="lbl" id="startLbl">Play</span><span class="sub" id="startSub">or press Space · arrow keys steer</span></button>
   <p class="how touch-only">steer with the arrow buttons, or swipe</p>
+  <button id="fbLink">Send feedback</button>
   <p class="proto">prototype</p>
+</div>
+<div id="fb" hidden>
+  <div class="fbpanel">
+    <div class="atitle">Send feedback</div>
+    <input id="fbName" maxlength="24" placeholder="name (optional)" autocomplete="off" spellcheck="false">
+    <textarea id="fbMsg" maxlength="2000" placeholder="Bugs, ideas, anything — it goes straight to the dev."></textarea>
+    <div class="fbrow"><button id="fbSend">Send</button><button id="fbClose">Close</button></div>
+    <div id="fbOut"></div>
+  </div>
 </div>
 <script>
 // ---- board ---------------------------------------------------------------------------
@@ -288,7 +316,7 @@ for (const b of pad.querySelectorAll('button')) {
 const KEYS = {ArrowUp: 'U', ArrowDown: 'D', ArrowLeft: 'L', ArrowRight: 'R', w: 'U', s: 'D', a: 'L', d: 'R', W: 'U', S: 'D', A: 'L', D: 'R'};
 addEventListener('keydown', e => {
   if (KEYS[e.key] && live()) { e.preventDefault(); turn(KEYS[e.key]); return; }
-  if ((e.key === ' ' || e.code === 'Space' || e.key === 'Enter') && !$('overlay').hidden && !e.repeat) { e.preventDefault(); startPlay(); }
+  if ((e.key === ' ' || e.code === 'Space' || e.key === 'Enter') && !$('overlay').hidden && $('fb').hidden && !e.repeat) { e.preventDefault(); startPlay(); }
 });
 // Keys only reach the game once the page has focus (a fresh tab with the address bar focused, or an
 // embed like itch.io before its first click), so the menu only offers Space when it will actually work.
@@ -469,6 +497,46 @@ function hud() {
 }
 $('startBtn').addEventListener('click', startPlay);
 
+// ---- feedback + crash reports (Supabase, anon insert-only tables from 01-inbox.sql) --------------
+const REST = 'https://ekcnpuwclkjnqnntlvot.supabase.co/rest/v1/';
+const SB_KEY = 'sb_publishable_pfng2gwF0IdAZfwbwhWPWQ_bfHOMIAC';   // publishable key, public by design; tables are RLS insert-only
+// ponytail: ?dev=1 / #dev writes nothing, so test sessions on the live site don't fill the inbox
+const DEV = /[?&#]dev(=1|\b)/.test(location.href);
+// Resolves true only if the row really landed - "sent" is never shown without it.
+// Until Lok runs 01-inbox.sql the tables don't exist, so this resolves false and the player is told.
+function post(table, body) {
+  if (DEV || location.protocol !== 'https:') return Promise.resolve(false);   // file:// dev runs stay out of the live inbox
+  return fetch(REST + table, {method: 'POST', headers: {apikey: SB_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal'},
+    body: JSON.stringify(body)}).then(r => r.ok, () => false);
+}
+let errCount = 0, lastErrAt = 0;
+function reportError(msg, stack) {
+  const now = Date.now();
+  if (errCount >= 5 || now - lastErrAt < 8000) return;      // don't spam
+  errCount++; lastErrAt = now;
+  post('shed_errors', {msg: String(msg).slice(0, 500), stack: String(stack || '').slice(0, 4000),
+    ua: navigator.userAgent.slice(0, 400), url: location.href.slice(0, 400),
+    extra: {mode, len: snake ? snake.length : null, apples, t: elapsed, touch: isTouch, w: innerWidth, h: innerHeight}});
+}
+addEventListener('error', e => reportError(e.message, e.error && e.error.stack));
+addEventListener('unhandledrejection', e => reportError('unhandledrejection: ' + (e.reason && e.reason.message || e.reason), e.reason && e.reason.stack));
+
+const gameCount = () => { try { return +localStorage.getItem('shed-games') || 0; } catch (e) { return 0; } };
+$('startBtn').addEventListener('click', () => { try { localStorage.setItem('shed-games', gameCount() + 1); } catch (e) {} });
+$('fbLink').addEventListener('click', () => { $('fb').hidden = false; $('fbOut').textContent = ''; $('fbMsg').focus(); });
+$('fbClose').addEventListener('click', () => { $('fb').hidden = true; });
+$('fbSend').addEventListener('click', async () => {
+  const m = $('fbMsg').value.trim(), out = $('fbOut');
+  if (!m) { out.classList.add('bad'); out.textContent = 'write something first'; return; }
+  $('fbSend').disabled = true; out.classList.remove('bad'); out.textContent = 'sending…';
+  const ok = await post('shed_feedback', {name: $('fbName').value.trim().slice(0, 24) || null, message: m.slice(0, 2000),
+    meta: {games: gameCount(), ua: navigator.userAgent.slice(0, 300), w: innerWidth, h: innerHeight}});
+  $('fbSend').disabled = false;
+  if (!ok) { out.classList.add('bad'); out.textContent = 'could not send — check your connection and try again.'; return; }   // text kept, so Send again just works
+  $('fbMsg').value = ''; out.textContent = 'thanks — sent.';
+  setTimeout(() => { $('fb').hidden = true; out.textContent = ''; }, 1200);
+});
+
 // ---- loop ----------------------------------------------------------------------------
 runKind = 'attract'; newRun(); mode = 'attract'; fit(); keyHint();
 addEventListener('resize', fit);
@@ -476,7 +544,8 @@ let last = 0;
 function frame(ts) {
   const dt = last ? Math.min(0.05, (ts - last) / 1000) : 0;
   last = ts;
-  step(dt); draw(); hud();
+  try { step(dt); draw(); hud(); }
+  catch (err) { reportError('loop crash: ' + (err && err.message || err), err && err.stack); }   // a thrown frame must not freeze the game silently
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
