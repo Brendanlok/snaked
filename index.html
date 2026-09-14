@@ -45,6 +45,7 @@
   #overlay b{color:#e8edf4;}
   #stats{margin:8px 0 2px;color:#9fadc1;font-size:14px;}
   #stats b{color:#ffd25f;font-size:20px;}
+  #stats .day{font-size:11px;letter-spacing:.06em;color:#6b7a90;margin-top:6px;}
   #startBtn{margin:16px 0 0;padding:12px 54px;color:#05121f;border:0;border-radius:999px;cursor:pointer;
     display:flex;flex-direction:column;align-items:center;gap:2px;
     background:linear-gradient(180deg,#84c4ff,#48a2f3);
@@ -163,7 +164,7 @@ function mulberry32(a) {
 
 // ---- state ---------------------------------------------------------------------------
 let mode = 'menu', runKind = 'attract', endT = 0;
-let rng, startLen, snake, occ, stones, stoneBorn, stoneCount, apple, dir, queue, elapsed, apples, acc;
+let seed, startLen, snake, occ, stones, stoneBorn, stoneCount, apple, dir, queue, elapsed, apples, acc;
 let prevHead, lastTail, chomp = -1;   // where the head came from, the cell the tail just left, and an apple the head is still gliding into
 let parts = [], shake = 0, deathReason = '', countT = 0;
 const COUNT_S = 3;          // 3-2-1 before a run, and again when coming back from a pause. Clock stopped, so times are unchanged.
@@ -174,8 +175,13 @@ function step1(i, d) {
   return nx < 0 || ny < 0 || nx >= COLS || ny >= ROWS ? -1 : ny * COLS + nx;
 }
 
+// Daily board: every real run on the same UTC day gets the same seed; the menu's demo bot stays random.
+const today = () => new Date().toISOString().slice(0, 10);
+const daySeed = d => [...d].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261);
+let runDay = '';
 function newRun() {
-  rng = mulberry32((Math.random() * 4294967296) >>> 0);
+  runDay = today();
+  seed = runKind === 'play' ? daySeed(runDay) : (Math.random() * 4294967296) >>> 0;   // placeApple derives each apple from it
   startLen = START_LEN;
   occ = new Uint8Array(COLS * ROWS);
   stones = new Uint16Array(COLS * ROWS);
@@ -211,7 +217,16 @@ function placeApple() {
     pool = [];
     for (let j = 0; j < COLS * ROWS; j++) if (!stones[j] && !occ[j]) pool.push(j);
   }
-  apple = pool.length ? pool[(rng() * pool.length) | 0] : -1;
+  // Apple n walks its own seeded shuffle of every cell and takes the first one in the pool, so two players
+  // whose boards differ still get the same apple whenever that cell is open for both (a uniform pick over the pool either way).
+  const r = mulberry32(seed ^ Math.imul(apples + 1, 0x9E3779B1)), inPool = new Uint8Array(COLS * ROWS), cells = [];
+  for (const j of pool) inPool[j] = 1;
+  for (let j = 0; j < COLS * ROWS; j++) cells.push(j);
+  apple = -1;
+  for (let n = cells.length; n > 0 && pool.length; n--) {
+    const k = (r() * n) | 0, j = cells[k]; cells[k] = cells[n - 1];
+    if (inPool[j]) { apple = j; break; }
+  }
 }
 
 // the whole game in one line: the shorter you are, the faster you move
@@ -577,6 +592,7 @@ function showResult(won) {
   $('stats').innerHTML = won
     ? 'Time <b>' + elapsed.toFixed(1) + 's</b>'
     : 'Length left <b>' + snake.length + '</b> &nbsp;·&nbsp; Time <b>' + elapsed.toFixed(1) + 's</b>';
+  $('stats').innerHTML += '<div class="day">Today\'s apples · ' + new Date(runDay + 'T12:00Z').toLocaleDateString('en-GB', {day: 'numeric', month: 'short', timeZone: 'UTC'}) + ' · same for everyone</div>';
   $('startLbl').textContent = 'Play again';
   $('overlay').hidden = false; $('hud').hidden = true;
   pad.classList.add('idle');
