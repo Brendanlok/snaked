@@ -90,12 +90,16 @@
   #fbClose{background:#1b2637;color:#cdd6e4;}
   #fbOut{font-size:12px;color:#8fd6a0;margin-top:8px;min-height:14px;}
   #fbOut.bad{color:#ff9d8a;}
-  /* sound on/off: top-right corner, clear of the centred score tiles; same secondary-button style as the arrows */
-  #snd{position:fixed;z-index:40;top:calc(12px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));
-    width:40px;height:40px;display:flex;align-items:center;justify-content:center;padding:0;
+  /* sound + pause buttons sit in the score row, right after the stone tile; same secondary-button style as the arrows.
+     The row stays above the pause screen so both stay usable there. */
+  #hud{z-index:30;}
+  #hud .hbtn{pointer-events:auto;align-self:center;width:40px;height:40px;display:flex;align-items:center;justify-content:center;padding:0;
     color:#cdd6e4;background:#18222f;border:1px solid #2f3f57;border-radius:12px;cursor:pointer;
     -webkit-tap-highlight-color:transparent;}
-  #snd svg{width:22px;height:22px;}
+  #hud .hbtn svg{width:22px;height:22px;}
+  #pauseBtn.on .bars, #pauseBtn:not(.on) .play{display:none;}
+  #restartBtn{margin-top:12px;padding:10px 30px;font-size:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:#cdd6e4;background:#18222f;border:1px solid #2f3f57;border-radius:999px;cursor:pointer;font-family:inherit;}
   #snd.off{color:#6b7a90;}
   #snd.off .w, #snd:not(.off) .x{display:none;}</style>
 </head>
@@ -105,6 +109,8 @@
   <div class="stat st-time"><b id="hTime">0.0</b><i>time</i></div>
   <div class="stat st-len"><b id="hLen">30</b><i>length</i></div>
   <div class="stat st-walls"><b id="hWalls">0</b><i>stone</i></div>
+  <button id="snd" class="hbtn" aria-label="Sound on"><svg viewBox="0 0 24 24"><path d="M3 9h4l5-4v14l-5-4H3z" fill="currentColor"/><path class="w" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="x" d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+  <button id="pauseBtn" class="hbtn" aria-label="Pause"><svg viewBox="0 0 24 24"><path class="bars" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/><path class="play" d="M8 5l11 7-11 7z" fill="currentColor"/></svg></button>
 </div>
 <div id="pad" class="idle">
   <button class="u" data-d="U" aria-label="up"><svg viewBox="0 0 24 24"><path d="M12 5l8 10H4z"/></svg></button>
@@ -118,6 +124,7 @@
   <p id="msg">You start long. <b>Every apple makes you shorter — and faster.</b> Whatever you shed turns to stone. Eat the last apple at length 1 to win.</p>
   <div id="stats" hidden></div>
   <button id="startBtn"><span class="lbl" id="startLbl">Play</span><span class="sub" id="startSub">or press Space · arrow keys steer</span></button>
+  <button id="restartBtn" hidden>Restart</button>
   <p class="how touch-only">steer with the arrow buttons, or swipe</p>
   <button id="fbLink">Send feedback</button></div>
 <div id="fb" hidden>
@@ -128,9 +135,7 @@
     <div class="fbrow"><button id="fbSend">Send</button><button id="fbClose">Close</button></div>
     <div id="fbOut"></div>
   </div>
-</div>
-<button id="snd" aria-label="Sound on"><svg viewBox="0 0 24 24"><path d="M3 9h4l5-4v14l-5-4H3z" fill="currentColor"/><path class="w" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="x" d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-<script>
+</div><script>
 // ---- board ---------------------------------------------------------------------------
 const COLS = 15, ROWS = 24, CELL = 24, W = COLS * CELL, H = ROWS * CELL;
 const DIRS = {U: [0, -1], D: [0, 1], L: [-1, 0], R: [1, 0]};
@@ -342,7 +347,7 @@ function turn(d) {
   if (queue.length < 3) queue.push(d);                     // buffered, so fast double-turns aren't dropped
 }
 let swipe = null;
-document.addEventListener('pointerdown', e => { if (live() && !e.target.closest('#pad, #snd')) swipe = {x: e.clientX, y: e.clientY, moved: false}; });
+document.addEventListener('pointerdown', e => { if (live() && !e.target.closest('#pad, #hud button')) swipe = {x: e.clientX, y: e.clientY, moved: false}; });
 document.addEventListener('pointermove', e => {
   if (!swipe || !live()) return;
   const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
@@ -367,11 +372,13 @@ const KEYS = {ArrowUp: 'U', ArrowDown: 'D', ArrowLeft: 'L', ArrowRight: 'R', w: 
 addEventListener('keydown', e => {
   if (KEYS[e.key] && live()) { e.preventDefault(); turn(KEYS[e.key]); return; }
   if ((e.key === ' ' || e.code === 'Space') && mode === 'count') { e.preventDefault(); if (!e.repeat) skipCount(); return; }
-  if ((e.key === ' ' || e.code === 'Space' || e.key === 'Enter') && !$('overlay').hidden && $('fb').hidden && !e.repeat) { e.preventDefault(); startPlay(); }
+  if ((e.key === 'p' || e.key === 'P' || e.key === 'Escape') && $('fb').hidden && !e.repeat && (live() || mode === 'paused')) { e.preventDefault(); togglePause(); return; }
+  if ((e.key === ' ' || e.code === 'Space' || e.key === 'Enter') && !$('overlay').hidden && $('fb').hidden && !e.repeat) { e.preventDefault(); primary(); }
 });
 // Keys only reach the game once the page has focus (a fresh tab with the address bar focused, or an
 // embed like itch.io before its first click), so the menu only offers Space when it will actually work.
 function keyHint() {
+  if (mode === 'paused') return;                              // the pause screen keeps its own hint
   $('startSub').textContent = document.hasFocus() ? 'or press Space · arrow keys steer' : 'click to play · then arrow keys steer';
 }
 addEventListener('focus', keyHint); addEventListener('blur', keyHint);
@@ -508,7 +515,7 @@ function draw() {
     const nLeft = Math.ceil(countT), f = nLeft - countT;       // f: 0 -> 1 through each second
     ctx.fillStyle = 'rgba(9,12,18,.45)'; ctx.fillRect(0, 0, W, H);
     ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    if (elapsed > 0) { ctx.fillStyle = '#9fadc1'; ctx.font = '700 13px -apple-system,Segoe UI,Roboto,sans-serif'; ctx.fillText('PAUSED', W / 2, H / 2 - 70); }
+    if (elapsed > 0) { ctx.fillStyle = '#9fadc1'; ctx.font = '700 13px -apple-system,Segoe UI,Roboto,sans-serif'; ctx.fillText('GET READY', W / 2, H / 2 - 70); }
     ctx.globalAlpha = Math.min(1, 1.6 - f);
     ctx.font = '800 ' + Math.round(96 - 22 * Math.min(1, f * 3)) + 'px -apple-system,Segoe UI,Roboto,sans-serif';
     ctx.shadowColor = 'rgba(95,176,255,.6)'; ctx.shadowBlur = 32; ctx.fillStyle = '#eaf2ff';
@@ -525,20 +532,40 @@ const $ = id => document.getElementById(id);
 function startPlay() {
   runKind = 'play'; newRun(); mode = 'count'; countT = COUNT_S; swipe = null;
   tone(440, 0.08, 'square', 0.05);                           // the "3" of the countdown
+  try { localStorage.setItem('shed-games', gameCount() + 1); } catch (e) {}
+  $('restartBtn').hidden = true; $('pauseBtn').classList.remove('on'); $('pauseBtn').setAttribute('aria-label', 'Pause'); keyHint();
   pad.classList.remove('idle');
   $('overlay').hidden = true; $('hud').hidden = false;
   $('hTime').textContent = '0.0'; $('hLen').textContent = snake.length; $('hWalls').textContent = 0;
 }
-// A locked phone, a notification or a switched tab freezes the run; coming back counts 3-2-1 again.
 // Space, or a tap/click, knocks one second off the 3-2-1; skipping past 1 starts the run on the next frame.
 function skipCount() {
   countT = Math.ceil(countT - 1e-6) - 1;
   if (countT > 0) tone(440, 0.08, 'square', 0.05);
 }
+// The pause button, P / Esc, a locked phone, a notification or a switched tab all open the pause screen.
+// The clock is stopped there; Resume counts 3-2-1 before play carries on.
 function pause() {
   if (!live()) return;
-  mode = 'count'; countT = COUNT_S; queue.length = 0; swipe = null;
+  mode = 'paused'; queue.length = 0; swipe = null;
+  $('badge').textContent = 'Clock stopped';
+  $('title').textContent = 'PAUSED';
+  $('msg').innerHTML = 'Take a breath. Resume gives you a 3-2-1 first.';
+  $('stats').hidden = false;
+  $('stats').innerHTML = 'Length <b>' + snake.length + '</b> &nbsp;·&nbsp; Time <b>' + elapsed.toFixed(1) + 's</b>';
+  $('startLbl').textContent = 'Resume'; $('startSub').textContent = 'or press Space · P';
+  $('restartBtn').hidden = false; $('pauseBtn').classList.add('on'); $('pauseBtn').setAttribute('aria-label', 'Resume');
+  $('overlay').hidden = false; pad.classList.add('idle');      // the score row stays up, so sound can be switched here too
 }
+function resume() {
+  if (mode !== 'paused') return;
+  mode = 'count'; countT = COUNT_S;
+  $('restartBtn').hidden = true; $('pauseBtn').classList.remove('on'); $('pauseBtn').setAttribute('aria-label', 'Pause');
+  $('overlay').hidden = true; pad.classList.remove('idle'); keyHint();
+  tone(440, 0.08, 'square', 0.05);
+}
+const togglePause = () => mode === 'paused' ? resume() : pause();
+const primary = () => mode === 'paused' ? resume() : startPlay();   // the big pill button: Resume when paused, Play otherwise
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
 addEventListener('blur', pause);
 function showResult(won) {
@@ -558,7 +585,9 @@ function hud() {
   if (mode !== 'play') return;
   $('hTime').textContent = elapsed.toFixed(1); $('hLen').textContent = snake.length; $('hWalls').textContent = stoneCount;
 }
-$('startBtn').addEventListener('click', startPlay);
+$('startBtn').addEventListener('click', primary);
+$('restartBtn').addEventListener('click', startPlay);
+$('pauseBtn').addEventListener('click', () => { togglePause(); $('pauseBtn').blur(); });
 
 // ---- feedback + crash reports (Supabase, anon insert-only tables from 01-inbox.sql) --------------
 const REST = 'https://ekcnpuwclkjnqnntlvot.supabase.co/rest/v1/';
@@ -584,9 +613,7 @@ function reportError(msg, stack) {
 addEventListener('error', e => reportError(e.message, e.error && e.error.stack));
 addEventListener('unhandledrejection', e => reportError('unhandledrejection: ' + (e.reason && e.reason.message || e.reason), e.reason && e.reason.stack));
 
-const gameCount = () => { try { return +localStorage.getItem('shed-games') || 0; } catch (e) { return 0; } };
-$('startBtn').addEventListener('click', () => { try { localStorage.setItem('shed-games', gameCount() + 1); } catch (e) {} });
-$('fbLink').addEventListener('click', () => { $('fb').hidden = false; $('fbOut').textContent = ''; $('fbMsg').focus(); });
+const gameCount = () => { try { return +localStorage.getItem('shed-games') || 0; } catch (e) { return 0; } };$('fbLink').addEventListener('click', () => { $('fb').hidden = false; $('fbOut').textContent = ''; $('fbMsg').focus(); });
 $('fbClose').addEventListener('click', () => { $('fb').hidden = true; });
 $('fbSend').addEventListener('click', async () => {
   const m = $('fbMsg').value.trim(), out = $('fbOut');
