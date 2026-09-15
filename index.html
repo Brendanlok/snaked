@@ -42,7 +42,7 @@
   #hud .st-len{padding:5px 13px;}
   #hud .st-len i{color:#a8935f;}
   #overlay{position:fixed;inset:0;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;color:#e8edf4;text-align:center;
+    align-items:center;justify-content:flex-start;color:#e8edf4;text-align:center;
     padding:calc(24px + env(safe-area-inset-top,0px)) 24px calc(24px + env(safe-area-inset-bottom,0px));
     overflow-y:auto;
     background:radial-gradient(ellipse 78% 56% at 50% 40%,
@@ -54,6 +54,8 @@
   #overlay p{margin:4px 0;color:#9fadc1;font-size:14px;max-width:300px;line-height:1.5;
     text-shadow:0 1px 6px rgba(6,9,14,.9);}
   #overlay b{color:#e8edf4;}
+  /* centred while it fits, scrollable from the top once the leaderboard makes it taller than a phone */
+  #overlay>:first-child{margin-top:auto;} #overlay>:last-child{margin-bottom:auto;}
   #stats{margin:8px 0 2px;color:#9fadc1;font-size:14px;}
   #stats b{color:#ffd25f;font-size:20px;}
   #stats .day{font-size:11px;letter-spacing:.06em;color:#6b7a90;margin-top:6px;}
@@ -71,11 +73,12 @@
     50%{transform:scale(1.045);box-shadow:0 14px 46px rgba(72,162,243,.62);}}
   @media (prefers-reduced-motion:reduce){#startBtn{animation:none;}}
   .how{font-size:12px!important;color:#6b7a90!important;margin-top:10px!important;}
-  /* on-screen arrows for touch: an inverted T under the board, in Breakin's secondary-button style.
+  /* on-screen arrows for touch: a d-pad (cross) under the board, in Breakin's secondary-button style (Lok's call, 2026-09-15).
      Laid out even when idle (visibility, not display) so the board can always be sized to sit above it. */
   #pad{position:fixed;left:0;right:0;bottom:calc(12px + env(safe-area-inset-bottom,0px));
-    display:grid;grid-template-columns:repeat(3,68px);grid-template-rows:repeat(2,54px);gap:8px;
+    display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,52px);gap:6px;
     justify-content:center;touch-action:none;}
+  #pad .hub{grid-column:2;grid-row:2;background:#131b27;border:1px solid #243349;border-radius:14px;}
   #pad.idle{visibility:hidden;}
   #pad button{display:flex;align-items:center;justify-content:center;padding:0;
     color:#cdd6e4;background:#18222f;border:1px solid #2f3f57;border-radius:14px;cursor:pointer;
@@ -83,7 +86,52 @@
   #pad button svg{width:26px;height:26px;fill:currentColor;}
   #pad button.on{background:#2a3a52;border-color:#48a2f3;color:#84c4ff;box-shadow:0 0 18px rgba(72,162,243,.35);}
   #pad .u{grid-column:2;grid-row:1;} #pad .l{grid-column:1;grid-row:2;}
-  #pad .d{grid-column:2;grid-row:2;} #pad .r{grid-column:3;grid-row:2;}
+  #pad .d{grid-column:2;grid-row:3;} #pad .r{grid-column:3;grid-row:2;}
+  /* leaderboard + name box: copied from Breakin */
+  #nameEntry{margin:14px 0 2px;}
+  #nameEntry .ne-label{color:#8fd6a0;font-size:13px;font-weight:700;letter-spacing:.04em;margin-bottom:7px;}
+  #nameEntry .ne-label.warn{color:#ffcf6b;}
+  #nameEntry .ne-row{display:flex;gap:8px;justify-content:center;}
+  #nameInput{padding:10px 12px;font-size:19px;border-radius:9px;border:1.5px solid #46587a;font-family:inherit;
+    text-transform:uppercase;letter-spacing:.22em;text-align:center;font-weight:800;
+    background:#0b1220;color:#e8edf4;width:150px;outline:none;box-shadow:0 0 0 3px rgba(95,176,255,.08);
+    -webkit-user-select:text;user-select:text;touch-action:auto;}
+  #nameInput::placeholder{color:#5a6a82;font-weight:600;letter-spacing:.02em;text-transform:none;opacity:1;}
+  #nameInput:focus{border-color:#5fb0ff;box-shadow:0 0 0 3px rgba(95,176,255,.22);}
+  #saveBtn{padding:10px 18px;font-size:14px;font-weight:700;border:0;border-radius:9px;background:#5fb0ff;color:#05121f;cursor:pointer;}
+  #saveBtn:disabled{background:#3a4a63;color:#93a4bd;cursor:default;}
+  #board{margin:22px auto 4px;width:286px;max-width:88vw;font-variant-numeric:tabular-nums;
+    border:1px solid rgba(120,150,200,.16);border-radius:12px;padding:13px 15px 11px;background:#0a0f18;}
+  #board .bt{color:#67788f;font-size:11px;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px;text-align:center;}
+  #board .grid{display:grid;grid-template-columns:1.9em minmax(0,1fr) auto auto auto;align-items:baseline;}
+  #board .grid.noday{grid-template-columns:1.9em minmax(0,1fr) auto auto;}
+  #board .grid.noday>span.dt,#board .grid.noday>span.h-dt{display:none;}
+  #board .grid>span{padding:5px 6px;}
+  #board .grid>span.rk,#board .grid>span.h-rk{padding-left:2px;}
+  #board .grid>span.sc,#board .grid>span.h-sc{padding-right:2px;}
+  #board .grid>span.head{font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#5f6d82;padding-bottom:7px;}
+  #board .grid>span.head.h-r{letter-spacing:0;}
+  #board .grid>span.rk,#board .grid>span.nm,#board .grid>span.h-l{text-align:left;}
+  #board .grid>span.dt,#board .grid>span.mx,#board .grid>span.sc,#board .grid>span.h-r{text-align:right;}
+  #board .me{background:rgba(95,176,255,.16);}
+  #board .rk{font-weight:800;color:#5c6a80;}
+  #board .rk.r1{color:#f5c451;}#board .rk.r2{color:#cfd8e4;}#board .rk.r3{color:#dc9160;}
+  #board .nm{text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#c4cedd;}
+  #board .dt,#board .mx{font-size:11px;color:#5f6d82;white-space:nowrap;}
+  #board .sc{font-weight:800;color:#e6edf6;white-space:nowrap;}
+  #board .sc.win{color:#ffd25f;}
+  #board .empty{color:#6b788c;font-size:13px;padding:10px;text-align:center;}
+  #board .brank{margin-top:9px;text-align:center;font-size:11.5px;color:#67788f;letter-spacing:.03em;}
+  #board .brank b{color:#c4cedd;font-weight:800;}
+  #board .bwarn{margin-top:7px;text-align:center;font-size:11.5px;color:#ff9d8a;line-height:1.45;}
+  #board .bmore{display:block;margin:8px auto 0;padding:6px 14px;font:inherit;font-size:11px;
+    letter-spacing:.14em;text-transform:uppercase;color:#8b98ac;background:#141d2b;
+    border:1px solid #283549;border-radius:999px;cursor:pointer;}
+  #board .btabs{display:flex;justify-content:center;gap:6px;margin:-2px 0 11px;}
+  #board .btab{padding:4px 12px;font:inherit;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+    color:#6b788c;background:#101823;border:1px solid #223047;border-radius:999px;cursor:pointer;}
+  #board .btab.on{color:#cfe0f5;background:#1b2636;border-color:#33455f;}
+  #board .bday{color:#5f6d82;font-size:11px;text-align:center;margin-top:9px;letter-spacing:.02em;}
   /* feedback link + dialog: copied from Breakin */
   #fbLink{background:none;border:0;color:#6b7a90;font-size:12px;letter-spacing:.03em;
     cursor:pointer;padding:4px;margin-top:12px;text-decoration:underline;font-family:inherit;}
@@ -135,6 +183,7 @@
 <div id="pad" class="idle">
   <button class="u" data-d="U" aria-label="up"><svg viewBox="0 0 24 24"><path d="M12 5l8 10H4z"/></svg></button>
   <button class="l" data-d="L" aria-label="left"><svg viewBox="0 0 24 24"><path d="M5 12l10-8v16z"/></svg></button>
+  <div class="hub" aria-hidden="true"></div>
   <button class="d" data-d="D" aria-label="down"><svg viewBox="0 0 24 24"><path d="M12 19L4 9h16z"/></svg></button>
   <button class="r" data-d="R" aria-label="right"><svg viewBox="0 0 24 24"><path d="M19 12L9 20V4z"/></svg></button>
 </div>
@@ -143,9 +192,17 @@
   <h1 id="title">SNAKED</h1>
   <p id="msg">You start long. <b>Every apple makes you shorter — and faster.</b> Whatever you shed turns to stone. Eat the last apple at length 1 to win.</p>
   <div id="stats" hidden></div>
+  <div id="nameEntry" hidden>
+    <div class="ne-label" id="neLabel"></div>
+    <div class="ne-row">
+      <input id="nameInput" maxlength="6" placeholder="your name" autocomplete="off" spellcheck="false" autocapitalize="characters" autocorrect="off" aria-label="Your name, up to 6 letters or numbers">
+      <button id="saveBtn">Save</button>
+    </div>
+  </div>
   <button id="startBtn"><span class="lbl" id="startLbl">Play</span><span class="sub" id="startSub">or press Space · arrow keys steer</span></button>
   <button id="restartBtn" hidden>Restart</button>
   <p class="how touch-only">steer with the arrow buttons, or swipe</p>
+  <div id="board"></div>
   <button id="fbLink">Send feedback</button></div>
 <div id="fb" hidden>
   <div class="fbpanel">
@@ -406,6 +463,7 @@ for (const b of pad.querySelectorAll('button')) {
 }
 const KEYS = {ArrowUp: 'U', ArrowDown: 'D', ArrowLeft: 'L', ArrowRight: 'R', w: 'U', s: 'D', a: 'L', d: 'R', W: 'U', S: 'D', A: 'L', D: 'R'};
 addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input, textarea')) return;   // typing a name must not steer, start or pause
   if (KEYS[e.key] && live()) { e.preventDefault(); turn(KEYS[e.key]); return; }
   if ((e.key === ' ' || e.code === 'Space') && mode === 'count') { e.preventDefault(); if (!e.repeat) skipCount(); return; }
   if ((e.key === 'p' || e.key === 'P' || e.key === 'Escape') && $('fb').hidden && !e.repeat && (live() || mode === 'paused')) { e.preventDefault(); togglePause(); return; }
@@ -568,7 +626,7 @@ function draw() {
 // ---- screens -------------------------------------------------------------------------
 const $ = id => document.getElementById(id);
 function startPlay() {
-  runKind = 'play'; newRun(); mode = 'count'; countT = COUNT_S; swipe = null;
+  runKind = 'play'; newRun(); mode = 'count'; countT = COUNT_S; swipe = null; pending = null;
   tone(440, 0.08, 'square', 0.05);                           // the "3" of the countdown
   try { localStorage.setItem('shed-games', gameCount() + 1); } catch (e) {}
   $('restartBtn').hidden = true; $('pauseBtn').classList.remove('on'); $('pauseBtn').setAttribute('aria-label', 'Pause'); keyHint();
@@ -593,6 +651,7 @@ function pause() {
   $('stats').innerHTML = 'Length <b>' + snake.length + '</b> &nbsp;·&nbsp; Time <b>' + elapsed.toFixed(1) + 's</b>';
   $('startLbl').textContent = 'Resume'; $('startSub').textContent = 'or press Space · P';
   $('restartBtn').hidden = false; $('pauseBtn').classList.add('on'); $('pauseBtn').setAttribute('aria-label', 'Resume');
+  $('board').hidden = true; $('nameEntry').hidden = true;
   $('overlay').hidden = false; pad.classList.add('idle');      // the score row stays up, so sound can be switched here too
 }
 function resume() {
@@ -619,6 +678,10 @@ function showResult(won) {
   $('startLbl').textContent = 'Play again';
   $('overlay').hidden = false; $('hud').hidden = true;
   pad.classList.add('idle');
+  // a run that crossed midnight UTC was played on yesterday's apples, so it never goes on today's board
+  pending = runDay === today() && apples > 0 ? {won, len: snake.length, apples, secs: Math.round(elapsed * 10) / 10} : null;
+  mine = null; boardExpanded = false; $('nameEntry').hidden = true; $('board').hidden = false;
+  refreshBoard().then(offerSave);
 }
 function hud() {
   if (mode !== 'play') return;
@@ -666,8 +729,122 @@ $('fbSend').addEventListener('click', async () => {
   setTimeout(() => { $('fb').hidden = true; out.textContent = ''; }, 1200);
 });
 
+// ---- shared leaderboard (shed_scores from 02-leaderboard.sql; Breakin's board, re-ranked for Snaked) -------
+// Until that table exists the fetch fails and the board honestly shows this device's own runs.
+const MAXBOARD = 10, BOARD_COLLAPSED = 5;
+const lbOn = () => location.protocol === 'https:';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+// Arcade names like Breakin: up to 6 capitals/digits, same short ban list (the SQL editor is the backstop).
+const cleanName = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+const NAME_BAN = /NIGG|N1GG|FUCK|SHIT|CUNT|FAGG|KIKE|CHINK|TRANNY|WHORE|HITLER|RETARD/;
+const NAME_BAN_EXACT = /^(RAPE|NAZI|FAG|SPIC|COON|GOOK|TWAT|CUM)$/;
+const nameAllowed = n => !NAME_BAN.test(n) && !NAME_BAN_EXACT.test(n);
+// Ranking: any win beats any loss; wins by fastest time; losses by fewest pieces left, then fastest.
+const rankCmp = (a, b) => (b.won - a.won) || (a.len - b.len) || (a.secs - b.secs);
+const sameRun = (a, b) => !!(a && b) && a.name === b.name && !!a.won === !!b.won && a.len === b.len && +a.secs === +b.secs;
+const loadLocal = () => { try { return JSON.parse(localStorage.getItem('snaked-scores')) || []; } catch (e) { return []; } };
+const onToday = s => String(s.created_at || '').slice(0, 10) === today();
+const shortDate = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('en-GB', {day: 'numeric', month: 'short'}); };
+let boardView = 'today', boardPicked = false, boardExpanded = false, boardLoading = false;
+let remoteAll = null, remoteToday = null, pending = null, mine = null, saveFailed = false;
+
+async function lbFetch(todayOnly) {
+  if (!lbOn()) return null;
+  try {
+    const r = await fetch(REST + 'shed_scores?select=name,won,len,secs,created_at&order=won.desc,len.asc,secs.asc,created_at.asc&limit=300'
+      + (todayOnly ? '&created_at=gte.' + today() + 'T00:00:00Z' : ''), {headers: {apikey: SB_KEY}});
+    return r.ok ? (await r.json()).map(s => ({...s, name: cleanName(s.name) || 'PLAYER', secs: +s.secs})) : null;
+  } catch (e) { return null; }
+}
+let boardLoadT = 0;
+async function refreshBoard() {
+  boardLoading = lbOn() && !remoteAll;                        // only the first load says "Loading"; later refreshes keep the rows up
+  renderBoard();
+  if (!lbOn()) return;
+  clearTimeout(boardLoadT);                                   // a request that never answers must not leave "Loading" up for good
+  boardLoadT = setTimeout(() => { if (boardLoading) { boardLoading = false; renderBoard(); } }, 6000);
+  const [a, t] = await Promise.all([lbFetch(false), lbFetch(true)]);
+  clearTimeout(boardLoadT);
+  remoteAll = a; remoteToday = t; boardLoading = false;
+  // today's board is empty every morning until someone plays - show All time then, never over the player's own tap
+  if (!boardPicked && boardView === 'today' && !(t || []).length && (a || []).length) boardView = 'all';
+  renderBoard();
+}
+const rowsFor = v => (v === 'today' ? remoteToday : remoteAll) || (boardLoading ? [] : v === 'today' ? loadLocal().filter(onToday) : loadLocal());
+
+function renderBoard() {
+  const all = rowsFor(boardView).slice().sort(rankCmp), list = all.slice(0, MAXBOARD);
+  const remote = boardView === 'today' ? remoteToday : remoteAll;
+  const tag = DEV ? ' &middot; dev mode, runs not saved' : remote || boardLoading ? '' : ' &middot; this device';
+  const empty = !rowsFor('today').length && !rowsFor('all').length;
+  let html = '<div class="bt">Leaderboard' + tag + '</div>' + (empty ? '' : '<div class="btabs">'
+    + [['today', 'Today'], ['all', 'All time']].map(([v, l]) => '<button class="btab' + (boardView === v ? ' on' : '') + '" data-v="' + v + '">' + l + '</button>').join('') + '</div>');
+  const warn = saveFailed ? '<div class="bwarn">Could not reach the leaderboard. This run is saved on this device.</div>' : '';
+  const dayLine = boardView === 'today' ? '<div class="bday">Same apples for everyone today</div>' : '';
+  if (!list.length) {
+    $('board').innerHTML = html + '<div class="empty">' + (boardLoading ? 'Loading scores&hellip;'
+      : boardView === 'today' ? 'No runs on today&rsquo;s board yet &mdash; finish one to claim #1.' : 'Nobody has saved a run yet.') + '</div>' + warn + dayLine;
+    return;
+  }
+  const showAll = boardExpanded || list.slice(BOARD_COLLAPSED).some(s => sameRun(s, mine));   // never hide the run just saved
+  let hit = false;
+  html += '<div class="grid' + (boardView === 'today' ? ' noday' : '') + '"><span class="head h-l h-rk">#</span><span class="head h-l">name</span>'
+    + '<span class="head h-r h-dt">date</span><span class="head h-r">time</span><span class="head h-r h-sc">result</span>'
+    + (showAll ? list : list.slice(0, BOARD_COLLAPSED)).map((s, i) => {
+      const me = !hit && sameRun(s, mine) ? (hit = true, ' me') : '';
+      return '<span class="rk' + (i < 3 ? ' r' + (i + 1) : '') + me + '">' + (i + 1) + '</span>'
+        + '<span class="nm' + me + '">' + esc(s.name) + '</span>'
+        + '<span class="dt' + me + '">' + esc(shortDate(s.created_at)) + '</span>'
+        + '<span class="mx' + me + '">' + (+s.secs).toFixed(1) + 's</span>'
+        + '<span class="sc' + (s.won ? ' win' : '') + me + '">' + (s.won ? 'WIN' : (s.len | 0) + ' left') + '</span>';
+    }).join('') + '</div>';
+  if (list.length > BOARD_COLLAPSED) html += '<button class="bmore">' + (showAll ? 'Show less' : 'Show all ' + list.length) + '</button>';
+  const players = new Set(all.map(s => s.name)).size, at = all.findIndex(s => sameRun(s, mine));
+  const field = players + ' player' + (players === 1 ? '' : 's') + (remote ? (boardView === 'today' ? ' today' : ' so far') : ' on this device');
+  $('board').innerHTML = html + '<div class="brank">' + (at < 0 ? field : 'You are <b>#' + (at + 1) + '</b> &middot; ' + field) + '</div>' + warn + dayLine;
+}
+$('board').addEventListener('click', e => {
+  const t = e.target.closest('.btab, .bmore');
+  if (!t) return;
+  if (t.classList.contains('bmore')) boardExpanded = !boardExpanded;
+  else if (t.dataset.v !== boardView) { boardView = t.dataset.v; boardPicked = true; boardExpanded = false; }
+  renderBoard();
+});
+
+// A finished run that would make today's top 10 gets the name box, judged on today's board (the daily race).
+function offerSave() {
+  if (!pending || mode !== 'over') return;
+  const list = (remoteToday || loadLocal().filter(onToday)).slice().sort(rankCmp);
+  const r = list.filter(s => rankCmp(s, pending) <= 0).length + 1;   // ties sit below the rows already there
+  if (r > MAXBOARD) return;
+  $('neLabel').classList.remove('warn');
+  $('neLabel').innerHTML = (r > 1 ? '&#9733; #' + r + ' on today&rsquo;s board' : list.length ? '&#9733; Top of today&rsquo;s board' : '&#9733; First on today&rsquo;s board') + ' &mdash; add your name';
+  let n = ''; try { n = cleanName(localStorage.getItem('snaked-name')); } catch (e) {}
+  $('nameInput').value = n; $('saveBtn').disabled = !n; $('nameEntry').hidden = false;
+}
+async function saveRun() {
+  const name = cleanName($('nameInput').value);
+  if (!pending || !name) return;
+  if (!nameAllowed(name)) { $('neLabel').textContent = 'Pick a different name — that one is not allowed.'; $('neLabel').classList.add('warn'); return; }
+  try { localStorage.setItem('snaked-name', name); } catch (e) {}
+  const run = {name, ...pending, created_at: new Date().toISOString()};
+  pending = null; mine = run; $('nameEntry').hidden = true; $('nameInput').blur();
+  try { localStorage.setItem('snaked-scores', JSON.stringify(loadLocal().concat(run).sort(rankCmp).slice(0, 50))); } catch (e) {}
+  // ponytail: one try, no retry queue - a failed save says so and stays on this device. Add Breakin's queue if players hit it.
+  saveFailed = lbOn() && !DEV && !await post('shed_scores', {name, won: run.won, len: run.len, apples: run.apples, secs: run.secs, ua: navigator.userAgent.slice(0, 300)});
+  if (!boardPicked) boardView = 'today';
+  await refreshBoard();
+}
+$('saveBtn').addEventListener('click', saveRun);
+$('nameInput').addEventListener('input', () => {
+  const c = cleanName($('nameInput').value);
+  if (c !== $('nameInput').value) $('nameInput').value = c;
+  $('saveBtn').disabled = !c;
+});
+$('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveRun(); } });
+
 // ---- loop ----------------------------------------------------------------------------
-runKind = 'attract'; newRun(); mode = 'attract'; fit(); keyHint();
+runKind = 'attract'; newRun(); mode = 'attract'; fit(); keyHint(); refreshBoard();
 addEventListener('resize', fit);
 let last = 0;
 function frame(ts) {
