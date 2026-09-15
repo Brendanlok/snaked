@@ -1,0 +1,27 @@
+Snake, with the one rule it is built on turned around.
+
+You start long: a 30-piece snake coiled along the bottom of the board. Every apple you eat makes you shorter, not longer. The last two pieces of your tail snap off, and they don't disappear. They turn to stone, right where they fell, for the rest of the run.
+
+So the board fills up as you shrink. And the shorter you get, the faster you move, from a lazy crawl at full length to more than twice as fast at the very end.
+
+HOW YOU WIN
+
+Eat your way all the way down. Eat the last apple at length 1 and the run is over and won. Most runs take between 10 and 35 seconds.
+
+WHAT KILLS YOU
+
+The edge of the board, any stone, or your own body. You get one life.
+
+Early on you are slow and the board is empty, but you are long and easy to trap yourself with. By the end you are tiny and have room to turn, but you are fast and the board is a maze of your own stone. Every apple is a trade.
+
+TODAY'S APPLES
+
+Every run on the same day gets the same apples as everyone else's, so a time is a fair comparison. Tomorrow is a new board.
+
+CONTROLS
+
+Desktop: arrow keys or WASD. P or Esc pauses.
+Phone: the arrow buttons under the board turn the moment your thumb touches them, or swipe on the board.
+There is a 3-2-1 before each run so you can get a thumb on the arrows.
+
+Free, no ads, no sign-in, no download. Works on a phone.

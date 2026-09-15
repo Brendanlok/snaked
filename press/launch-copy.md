@@ -1,0 +1,121 @@
+# Snaked — launch copy
+
+DRAFT, written 15 Sep by the scheduled session for Lok to edit. Nothing here has been posted.
+
+Assets in this folder:
+
+| File | What it is |
+|---|---|
+| `snaked-run.gif` | 27s loop, 324x568, 1.6 MB. One full winning run by the demo bot at real speed: 30 pieces down to 1, the board filling with stone, the speed-up at the end, then a title card. Lead with this, the speed-up is invisible in a still. |
+| `itch-cover.png` | 630x500 itch cover: SNAKED over a real mid-run board. |
+| `shot-0-menu.png` | Menu at phone width (2x). |
+| `shot-1-long-and-slow.png` | 3s in: full length, almost no stone. |
+| `shot-2-halfway.png` | Length 14, stone spreading. |
+| `shot-3-nearly-gone.png` | Length 4, fast, boxed in by stone. Strongest single image. |
+
+All images are rendered from the real game code (a scratch copy driven frame by frame), not mock-ups. The score tiles in the screenshots are redrawn on top in the game's colours.
+
+Hosted once pushed: `https://brendanlok.github.io/snaked/press/snaked-run.gif`
+
+## One-liner
+
+> Snake, except every apple makes you shorter and faster, and the pieces you shed
+> turn to stone. Eat the last apple at length 1 to win.
+
+## Title options
+
+- Snaked — Snake, in reverse: every apple makes you shorter, and what you shed turns to stone
+- I made a Snake where you start long and have to eat your way down to nothing
+- Snaked: the shorter you get, the faster you go, and the board fills with your own tail
+
+## r/WebGames
+
+**Title:** Snaked — Snake, in reverse: every apple makes you shorter and faster, and what you shed turns to stone
+
+Browser game, no sign-in, no ads, works on phones.
+
+It's Snake with the core rule flipped. You start 30 pieces long, and every apple
+makes you shorter. The two tail pieces you lose don't vanish — they turn to
+stone where they fell, permanently. The shorter you get, the faster you move.
+Eat the last apple at length 1 to win. Edge, stone or your own body ends it, one
+life.
+
+The tension is that the two halves of the run are opposite problems. At the start
+you're slow with an empty board but so long you can trap yourself. At the end
+you're tiny with room to turn, but more than twice as fast and threading a maze
+you built. A run is 10 to 35 seconds.
+
+Everyone gets the same apples on the same day, so times are comparable.
+
+https://brendanlok.itch.io/snaked
+
+## r/playmygame
+
+Their required template, filled in. Check the sidebar rules on AI-assisted games
+before posting — the Involvement line is honest about it.
+
+**Title:** [HTML5] Snaked — Snake in reverse: every apple makes you shorter and faster
+
+```
+Game Title: Snaked
+
+Playable Link: https://brendanlok.itch.io/snaked
+
+Platform: Browser — desktop and mobile
+
+Description: Snaked is Snake with its one core rule turned around. You start long, 30 pieces coiled at the bottom of the board, and every apple makes you shorter instead of longer. The two pieces you shed don't disappear: they turn permanently to stone where they fell. The shorter you get, the faster you move, and you win by eating the last apple at length 1. Hitting the edge, stone or your own body ends the run. One life.
+
+What makes it tricky is that the start and the end are opposite problems. Early on you're slow and the board is empty, but you're long enough to box yourself in. Near the end you're tiny and have room to turn, but you're more than twice as fast and the board is full of your own stone. Runs take 10 to 35 seconds.
+
+Everyone gets the same apples on the same day, so your time means the same as anyone else's.
+
+Controls: arrow keys or WASD on desktop; on-screen arrow buttons or swipe on mobile. Free, no ads, no sign-in.
+
+Feedback I'd most like: does the reversal click in your first run, and are the last few apples steerable on a phone at that speed?
+
+Free to Play Status:
+
+* [x] Free to play
+* [ ] Demo/Key available
+* [ ] Paid (Allowed only on Tuesdays with [TT] in the title)
+
+Involvement: Solo project. I came up with the concept and made the design calls — the reversed rule, the fixed speed curve, the controls, what went in and what got cut — and tested it on my own phone. The code was written with Claude, an AI model, working under my direction.
+```
+
+## itch.io
+
+**Title:** Snaked
+
+**Tagline (short description, ~140 chars):**
+
+> Snake, in reverse. Every apple makes you shorter and faster, and what you shed
+> turns to stone. Eat the last apple at length 1 to win.
+
+**Description:** paste `itch-description.txt`.
+
+**Metadata:**
+
+- Kind of project: HTML5 / playable in browser
+- Genre: Action / Arcade
+- Tags: `arcade`, `snake`, `singleplayer`, `mobile-friendly`, `no-install`, `minimalist`, `fast-paced`, `short`
+- Price: Free
+- Embed: point it at `https://brendanlok.github.io/snaked/`, 420x760, fullscreen button on, mobile friendly on
+- Cover: `itch-cover.png`; screenshots: `shot-3`, `shot-2`, `shot-1`, `shot-0`; GIF first in the description if itch allows it
+
+## Show HN
+
+Not included. Breakin skipped HN (Lok, 13 Sep); same call for Snaked unless Lok says otherwise.
+
+## Before posting — claims to check
+
+- **Feedback box:** the copy above does NOT say "comes straight to me" (Breakin's did).
+  Snaked's feedback box only delivers once `01-inbox.sql` is run in Supabase. Until
+  then it tells players "could not send". Run the SQL, then add the line back.
+- **Leaderboard and installable app:** Snaked has neither yet, so neither is
+  mentioned. Add them only if they ship before Friday.
+- **"Tested it on my own phone":** true only after Thursday's device pass.
+- **"More than twice as fast":** 0.16s per move at full length vs 0.06s at length 1
+  is 2.7x. Correct as long as the fixed rules don't change.
+- **itch link:** `brendanlok.itch.io/snaked` is a guess at the address; the itch page
+  doesn't exist yet. Fix the links once it does.
+- The GIF and screenshots show a bot playing. Don't caption them as a human run.
