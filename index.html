@@ -113,7 +113,15 @@
   #restartBtn{margin-top:12px;padding:10px 30px;font-size:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
     color:#cdd6e4;background:#18222f;border:1px solid #2f3f57;border-radius:999px;cursor:pointer;font-family:inherit;}
   #snd.off{color:#6b7a90;}
-  #snd.off .w, #snd:not(.off) .x{display:none;}</style>
+  #snd.off .w, #snd:not(.off) .x{display:none;}
+  /* a phone held sideways leaves ~150px between the score row and the arrows - too small to play, so ask for upright.
+     Same query as SIDEWAYS in the script, which pauses the run. */
+  #rotate{display:none;position:fixed;inset:0;z-index:60;flex-direction:column;align-items:center;justify-content:center;
+    gap:10px;background:#0a0e14;color:#e8edf4;text-align:center;padding:24px;}
+  #rotate svg{width:54px;height:54px;color:#57d3ff;filter:drop-shadow(0 0 14px rgba(87,211,255,.5));}
+  #rotate b{font-size:22px;font-weight:800;letter-spacing:.14em;color:#eaf2ff;text-shadow:0 0 32px rgba(95,176,255,.5);}
+  #rotate span{font-size:14px;color:#9fadc1;}
+  @media (pointer:coarse) and (orientation:landscape) and (max-height:520px){#rotate{display:flex;}}</style>
 </head>
 <body>
 <div id="wrap"><canvas id="cv"></canvas></div>
@@ -147,7 +155,9 @@
     <div class="fbrow"><button id="fbSend">Send</button><button id="fbClose">Close</button></div>
     <div id="fbOut"></div>
   </div>
-</div><script>
+</div>
+<div id="rotate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18.5h2"/></svg>
+  <b>TURN YOUR PHONE</b><span>Snaked plays upright. Your run is paused.</span></div><script>
 // ---- board ---------------------------------------------------------------------------
 const COLS = 15, ROWS = 24, CELL = 24, W = COLS * CELL, H = ROWS * CELL;
 const DIRS = {U: [0, -1], D: [0, 1], L: [-1, 0], R: [1, 0]};
@@ -446,7 +456,9 @@ function step(dt) {
 // ---- drawing -------------------------------------------------------------------------
 const canvas = document.getElementById('cv'), ctx = canvas.getContext('2d');
 let scale = 1, dpr = 1;
+const SIDEWAYS = matchMedia('(pointer:coarse) and (orientation:landscape) and (max-height:520px)');   // same query as #rotate's CSS
 function fit() {
+  if (SIDEWAYS.matches) pause();                              // turning the phone mid-run must not kill it behind the notice
   const top = parseFloat(getComputedStyle(document.getElementById('wrap')).paddingTop) || 82;
   const floor = isTouch ? pad.getBoundingClientRect().top - 10 : innerHeight - 12;   // the board always ends above the arrows
   const aw = Math.min(innerWidth - 16, 480), ah = floor - top;
