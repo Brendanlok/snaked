@@ -191,7 +191,9 @@
   #pause .ptitle{font-size:15px;letter-spacing:.3em;text-transform:uppercase;color:#8ba0bd;margin-bottom:6px;}
   #pause .pmenu button{padding:13px 40px;font-size:16px;font-weight:700;border:0;border-radius:999px;cursor:pointer;font-family:inherit;}
   #pResume{background:linear-gradient(180deg,#84c4ff,#48a2f3);color:#05121f;box-shadow:0 8px 26px rgba(72,162,243,.38);}
-  #pExit{background:#1b2637;color:#cdd6e4;}
+  #pExit,#pBack{background:#1b2637;color:#cdd6e4;}
+  #pQuit{background:#7a2230;color:#ffdfe3;}
+  #pause .pmenu p.pwarn{max-width:240px;font-size:13px;line-height:1.45;color:#c9d3e2;margin:0 0 4px;text-align:center;}
   #pause .phint{margin-top:-4px;font-size:11px;letter-spacing:.06em;color:#67788f;}
   #pause .phint b{color:#9fb0c7;font-weight:700;}
   /* competitive: menu button, match panel, rival tile and callouts - copied from Breakin */
@@ -262,12 +264,19 @@
 <div id="sab"></div>
 <div id="chase" hidden></div>
 <div id="pause" hidden>
-  <div class="pmenu">
+  <div class="pmenu" id="pMenu">
     <div class="ptitle">PAUSED</div>
     <button id="pResume">Continue</button>
     <div class="phint">or press <b>Spacebar</b></div>
     <button id="pExit">Exit to menu</button>
     <div class="phint">or press <b>Esc</b></div>
+  </div>
+  <div class="pmenu" id="pConfirm" hidden>
+    <div class="ptitle">Quit run?</div>
+    <p class="pwarn">You'll lose this run &mdash; it won't be saved.</p>
+    <button id="pQuit">Quit to menu</button>
+    <button id="pBack">Keep playing</button>
+    <div class="phint">Esc to keep playing</div>
   </div>
 </div>
 <div id="compete" hidden>
@@ -621,7 +630,7 @@ addEventListener('keydown', e => {
   if (KEYS[e.key] && live()) { e.preventDefault(); turn(KEYS[e.key]); return; }
   if ((e.key === ' ' || e.code === 'Space') && mode === 'count') { e.preventDefault(); if (!e.repeat) skipCount(); return; }
   if (mode === 'paused' && !e.repeat) {                        // Breakin's keys: Space carries on, Esc exits to the menu
-    if (e.key === 'Escape') { e.preventDefault(); exitToMenu(); }
+    if (e.key === 'Escape') { e.preventDefault(); confirming() ? cancelExit() : askExit(); }   // Esc asks first; Esc again keeps playing
     else if (e.key === ' ' || e.code === 'Space' || e.key === 'Enter' || e.key === 'p' || e.key === 'P') { e.preventDefault(); resume(); }
     return;
   }
@@ -817,10 +826,10 @@ function skipCount() {
 function pause() {
   if (!live() || versus) return;                              // a race never stops for one player
   mode = 'paused'; pausedAt = performance.now(); queue.length = 0; swipe = null;
-  $('pause').hidden = false; pad.classList.add('idle');
+  $('pause').hidden = false; $('pMenu').hidden = false; $('pConfirm').hidden = true; pad.classList.add('idle');
 }
 function resume() {
-  if (mode !== 'paused') return;
+  if (mode !== 'paused' || confirming()) return;              // on "Quit run?" only its own buttons act
   mode = 'count'; countT = COUNT_S;
   $('pause').hidden = true; pad.classList.remove('idle'); keyHint();
   tone(440, 0.08, 'square', 0.05);
@@ -828,6 +837,10 @@ function resume() {
 // Exit to menu: the run is dropped (nothing saved) and the demo snake plays behind the title again.
 // ponytail: one press, no "are you sure" step like Breakin's - add it if players lose runs by accident.
 function exitToMenu() { if (mode === 'paused') toMenu(); }
+// Exit to menu asks first, like Breakin: the run is lost.
+const confirming = () => !$('pConfirm').hidden;
+function askExit() { if (mode === 'paused') { $('pMenu').hidden = true; $('pConfirm').hidden = false; } }
+function cancelExit() { $('pConfirm').hidden = true; $('pMenu').hidden = false; }
 function toMenu() {
   $('pause').hidden = true; $('hud').hidden = true; $('compete').hidden = true; pad.classList.add('idle');
   $('hWallsLbl').textContent = 'stone'; $('hWalls').parentElement.classList.remove('st-opp');
@@ -866,7 +879,9 @@ function hud() {
 }
 $('startBtn').addEventListener('click', primary);
 $('pResume').addEventListener('click', resume);
-$('pExit').addEventListener('click', exitToMenu);
+$('pExit').addEventListener('click', askExit);
+$('pQuit').addEventListener('click', exitToMenu);
+$('pBack').addEventListener('click', cancelExit);
 if (isTouch) document.querySelectorAll('#pause .phint').forEach(el => { el.hidden = true; });   // a phone has no Spacebar or Esc
 // on the pause screen a tap anywhere that isn't a button carries on (the tap that paused is ignored)
 $('pause').addEventListener('click', e => { if (mode === 'paused' && performance.now() - pausedAt > 350 && !e.target.closest('button')) resume(); });
