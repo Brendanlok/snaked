@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- The home-screen icon redrawn bold for a 16px tab: same snake bend, same apple, no stone (it vanishes at this size). -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b98bff"/>
+      <stop offset="1" stop-color="#58d2ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="#0a0e14"/>
+  <path d="M6 10H15V22H24" fill="none" stroke="url(#g)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="25" cy="9" r="3.2" fill="#ffd25f"/>
+</svg>

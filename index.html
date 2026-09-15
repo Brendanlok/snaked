@@ -17,6 +17,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Snaked">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-192.png" sizes="192x192">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
@@ -67,7 +69,19 @@
   #startBtn .sub{font-size:10px;font-weight:700;letter-spacing:.04em;opacity:.6;}
   #startBtn:active{transform:scale(.96);}
   .touch-only{display:none;}
-  @media (pointer:coarse){#startBtn .sub{display:none;}.touch-only{display:block;}}
+  @media (pointer:coarse){.touch-only{display:block;}}
+  /* Menu settings, copied from Breakin: one link that opens the choice, so a first play stays one tap. */
+  #settings{display:flex;flex-direction:column;align-items:center;}
+  #setToggle{margin:10px 0 0;}
+  #setToggle::after{content:' ▾';}
+  #settings.setopen #setToggle::after{content:' ▴';}
+  #settings:not(.setopen) #sctl{display:none;}
+  #sctl{margin:10px 0 0;}
+  #sctl .slbl{display:block;color:#7f8ca0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;}
+  #sctl .srow{display:flex;gap:8px;justify-content:center;}
+  #sctl button{padding:9px 18px;font-size:13px;font-weight:700;border-radius:999px;cursor:pointer;
+    color:#cdd6e4;background:#152131;border:1px solid #2b3a52;}
+  #sctl button.on{color:#05121f;background:#5fb0ff;border-color:#5fb0ff;}
   @keyframes breathe{
     0%,100%{transform:scale(1);box-shadow:0 10px 34px rgba(72,162,243,.34);}
     50%{transform:scale(1.045);box-shadow:0 14px 46px rgba(72,162,243,.62);}}
@@ -146,7 +160,7 @@
   #board .btab.on{color:#cfe0f5;background:#1b2636;border-color:#33455f;}
   #board .bday{color:#5f6d82;font-size:11px;text-align:center;margin-top:9px;letter-spacing:.02em;}
   /* feedback link + dialog: copied from Breakin */
-  #fbLink{background:none;border:0;color:#6b7a90;font-size:12px;letter-spacing:.03em;
+  #fbLink,#setToggle{background:none;border:0;color:#6b7a90;font-size:12px;letter-spacing:.03em;
     cursor:pointer;padding:4px;margin-top:12px;text-decoration:underline;font-family:inherit;}
   #fb{position:fixed;inset:0;z-index:50;display:flex;align-items:safe center;justify-content:center;overflow-y:auto;
     background:rgba(4,7,11,.82);padding:20px;}
@@ -308,7 +322,14 @@
       <button id="saveBtn">Save</button>
     </div>
   </div>
-  <button id="startBtn"><span class="lbl" id="startLbl">Play</span><span class="sub" id="startSub">or press Space · arrow keys steer</span></button>
+  <div id="settings">
+    <button id="setToggle" aria-expanded="false">Sound: on</button>
+    <div id="sctl">
+      <span class="slbl">Sound</span>
+      <div class="srow"><button data-s="1">On</button><button data-s="0">Off</button></div>
+    </div>
+  </div>
+  <button id="startBtn"><span class="lbl" id="startLbl">Play</span><span class="sub" id="startSub">click to start</span></button>
   <button id="competeBtn" hidden>Play competitive</button>
   <p class="how touch-only">steer with the arrow buttons, or swipe</p>
   <div id="board"></div>
@@ -538,10 +559,22 @@ function tone(freq, dur, type, vol, slideTo, delay) {
   o.connect(g); g.connect(actx.destination); o.start(t0); o.stop(t0 + dur + 0.02);
 }
 const sndBtn = document.getElementById('snd');
-function showSound() { sndBtn.classList.toggle('off', !soundOn); sndBtn.setAttribute('aria-label', soundOn ? 'Sound on' : 'Sound off'); }
-sndBtn.addEventListener('click', () => {
-  soundOn = !soundOn; showSound(); sndBtn.blur();
+const sctlBtns = [...document.querySelectorAll('#sctl button')];
+// the in-run button and the menu's On/Off row are two views of the same remembered setting
+function showSound() {
+  sndBtn.classList.toggle('off', !soundOn); sndBtn.setAttribute('aria-label', soundOn ? 'Sound on' : 'Sound off');
+  sctlBtns.forEach(b => b.classList.toggle('on', (b.dataset.s === '1') === soundOn));
+  document.getElementById('setToggle').textContent = 'Sound: ' + (soundOn ? 'on' : 'off');
+}
+function setSound(on) {
+  soundOn = on; showSound();
   try { localStorage.setItem('snaked-sound', soundOn ? '1' : '0'); } catch (e) {}
+}
+sndBtn.addEventListener('click', () => { setSound(!soundOn); sndBtn.blur(); });
+sctlBtns.forEach(b => b.addEventListener('click', () => setSound(b.dataset.s === '1')));
+document.getElementById('setToggle').addEventListener('click', () => {
+  const open = document.getElementById('settings').classList.toggle('setopen');
+  document.getElementById('setToggle').setAttribute('aria-expanded', open ? 'true' : 'false');
 });
 showSound();
 
@@ -595,13 +628,8 @@ addEventListener('keydown', e => {
   if ((e.key === 'p' || e.key === 'P' || e.key === 'Escape') && $('fb').hidden && !e.repeat && live()) { e.preventDefault(); pause(); return; }
   if ((e.key === ' ' || e.code === 'Space' || e.key === 'Enter') && !$('overlay').hidden && $('fb').hidden && $('compete').hidden && !e.repeat) { e.preventDefault(); primary(); }
 });
-// Keys only reach the game once the page has focus (a fresh tab with the address bar focused, or an
-// embed like itch.io before its first click), so the menu only offers Space when it will actually work.
-function keyHint() {
-  if (mode === 'paused') return;                              // the pause screen keeps its own hint
-  $('startSub').textContent = document.hasFocus() ? 'or press Space · arrow keys steer' : 'click to play · then arrow keys steer';
-}
-addEventListener('focus', keyHint); addEventListener('blur', keyHint);
+// Lok, 15 Sep: the button just says "click to start" (Space still works, it is no longer advertised).
+function keyHint() { $('startSub').textContent = isTouch ? 'tap to start' : 'click to start'; }
 
 // ---- simulation ----------------------------------------------------------------------
 function burst(i, col, n) {
@@ -806,7 +834,7 @@ function toMenu() {
   runKind = 'attract'; newRun(); mode = 'attract'; pending = null;
   $('badge').textContent = MENU.badge; $('title').textContent = MENU.title; $('msg').innerHTML = MENU.msg;
   $('stats').hidden = true; $('nameEntry').hidden = true; $('board').hidden = false;
-  $('startLbl').textContent = 'Play'; keyHint();
+  $('startLbl').textContent = 'Play'; keyHint(); $('settings').hidden = false;
   $('overlay').hidden = false; refreshBoard();
 }
 const primary = startPlay;
@@ -822,7 +850,7 @@ function showResult(won) {
     ? 'Time <b>' + elapsed.toFixed(1) + 's</b>'
     : 'Length left <b>' + snake.length + '</b> &nbsp;·&nbsp; Time <b>' + elapsed.toFixed(1) + 's</b>';
   $('stats').innerHTML += '<div class="day">Today\'s apples · ' + new Date(runDay + 'T12:00Z').toLocaleDateString('en-GB', {day: 'numeric', month: 'short', timeZone: 'UTC'}) + ' · same for everyone</div>';
-  $('startLbl').textContent = 'Play again';
+  $('startLbl').textContent = 'Play again'; $('settings').hidden = true;
   $('overlay').hidden = false; $('hud').hidden = true;
   pad.classList.add('idle');
   // a run that crossed midnight UTC was played on yesterday's apples, so it never goes on today's board
