@@ -180,6 +180,45 @@
   #pExit{background:#1b2637;color:#cdd6e4;}
   #pause .phint{margin-top:-4px;font-size:11px;letter-spacing:.06em;color:#67788f;}
   #pause .phint b{color:#9fb0c7;font-weight:700;}
+  /* competitive: menu button, match panel, rival tile and callouts - copied from Breakin */
+  #competeBtn{margin-top:12px;padding:11px 30px;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:inherit;
+    color:#cdd6e4;background:#18222f;border:1px solid #2f3f57;border-radius:999px;cursor:pointer;}
+  #competeBtn:active{transform:scale(.97);}
+  #compete{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+    background:rgba(4,7,11,.82);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);padding:20px;}
+  #compete .cpanel{background:#0d1420;border:1px solid #2b3a52;border-radius:14px;padding:20px;
+    width:320px;max-width:92vw;box-sizing:border-box;color:#e8edf4;text-align:center;display:flex;flex-direction:column;gap:12px;}
+  #compete .ctitle{font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:#7f8ca0;margin-bottom:2px;}
+  #compete .cview{display:flex;flex-direction:column;align-items:center;gap:12px;}
+  #compete .csub{margin:0 0 2px;font-size:13px;line-height:1.5;color:#93a1b5;}
+  #compete .cview button{width:100%;box-sizing:border-box;padding:13px 18px;font-size:15px;font-weight:700;font-family:inherit;
+    border:0;border-radius:999px;cursor:pointer;background:linear-gradient(180deg,#84c4ff,#48a2f3);color:#05121f;}
+  #compete .cview button.ghost{background:#1b2637;color:#cdd6e4;}
+  #compete .cview button.link{width:auto;background:none;color:#6b7a90;font-size:12px;font-weight:600;
+    text-decoration:underline;padding:4px;border-radius:0;}
+  #compete .ccode{font-size:30px;font-weight:800;letter-spacing:.12em;color:#eaf2ff;
+    font-variant-numeric:tabular-nums;padding:4px 0;text-shadow:0 0 24px rgba(95,176,255,.4);}
+  #compete .cnote{font-size:11.5px;line-height:1.5;color:#6b7a90;background:rgba(120,150,200,.07);border-radius:9px;padding:9px 11px;}
+  #compete input{width:100%;box-sizing:border-box;border-radius:9px;border:1px solid #33455f;background:#0b1220;color:#e8edf4;
+    outline:none;font-family:inherit;-webkit-user-select:text;user-select:text;touch-action:auto;}
+  #compete input:focus{border-color:#5fb0ff;}
+  #compete #cCodeIn{padding:12px;font-size:20px;font-weight:800;letter-spacing:.18em;text-align:center;text-transform:uppercase;}
+  #compete #cName{padding:10px 12px;font-size:16px;text-align:center;}
+  #compete .cerr{font-size:12px;line-height:1.45;color:#e6957f;}
+  #compete .cerr:empty{display:none;}
+  #compete #cResultTitle{font-size:22px;font-weight:800;letter-spacing:.01em;color:#eaf2ff;}
+  #compete #cResultTitle.win{color:#8fd6a0;text-shadow:0 0 26px rgba(143,214,160,.4);}
+  #compete #cResultTitle.lose{color:#ff9d8a;}
+  #compete #cResultTitle.tie{color:#ffd25f;}
+  #compete #cResultScore{font-size:14px;color:#c4cedd;font-variant-numeric:tabular-nums;margin-top:-4px;}
+  #compete button[disabled]{opacity:.4;pointer-events:none;}
+  #hud .st-opp b{color:#8fd6a0;}
+  #hud .st-opp i{max-width:74px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#7f8ca0;}
+  #vsMsg{position:fixed;left:0;right:0;top:32%;text-align:center;z-index:32;pointer-events:none;padding:0 20px;
+    font-size:15px;font-weight:800;letter-spacing:.02em;color:#eaf2ff;
+    text-shadow:0 2px 12px rgba(0,0,0,.7),0 0 24px rgba(95,176,255,.4);
+    opacity:0;transform:translateY(-8px);transition:opacity .3s,transform .3s;}
+  #vsMsg.show{opacity:1;transform:none;}
   #snd.off{color:#6b7a90;}
   #snd.off .w, #snd:not(.off) .x{display:none;}
   /* a phone held sideways leaves ~150px between the score row and the arrows - too small to play, so ask for upright.
@@ -196,7 +235,7 @@
 <div id="hud" hidden>
   <div class="stat st-time"><b id="hTime">0.0</b><i>time</i></div>
   <div class="stat st-len"><b id="hLen">30</b><i>length</i></div>
-  <div class="stat st-walls"><b id="hWalls">0</b><i>stone</i></div>
+  <div class="stat st-walls"><b id="hWalls">0</b><i id="hWallsLbl">stone</i></div>
   <button id="snd" class="hbtn" aria-label="Sound on"><svg viewBox="0 0 24 24"><path d="M3 9h4l5-4v14l-5-4H3z" fill="currentColor"/><path class="w" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="x" d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
 </div>
 <div id="pad" class="idle">
@@ -217,6 +256,46 @@
     <div class="phint">or press <b>Esc</b></div>
   </div>
 </div>
+<div id="compete" hidden>
+  <div class="cpanel">
+    <div class="ctitle">Competitive</div>
+    <div id="cChoice" class="cview">
+      <p class="csub">Race a friend on the same apples. Everything you shed lands on their board as stone &mdash; first to shed it all wins.</p>
+    </div>
+    <div id="cNameRow" class="cview"><input id="cName" maxlength="6" placeholder="Your name" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
+    <div id="cChoiceBtns" class="cview">
+      <div id="cChoiceErr" class="cerr"></div>
+      <button id="cInvite">Invite a friend</button>
+      <button id="cJoin" class="ghost">Join with a code</button>
+      <button id="cBack1" class="link">Back to menu</button>
+    </div>
+    <div id="cInviteV" class="cview" hidden>
+      <p class="csub">Send your friend this code, or the link.</p>
+      <div id="cCode" class="ccode">&mdash;</div>
+      <button id="cCopy" class="ghost">Share join link</button>
+      <div id="cInviteStatus" class="csub" style="margin:0"></div>
+      <button id="cStart" hidden>Start match</button>
+      <div class="cnote">Keep this screen open until they join.</div>
+      <button id="cBack2" class="link">Cancel</button>
+    </div>
+    <div id="cJoinV" class="cview" hidden>
+      <p class="csub">The 6-character code from your friend.</p>
+      <input id="cCodeIn" maxlength="6" placeholder="ABC234" autocomplete="off" autocapitalize="characters" spellcheck="false">
+      <button id="cJoinGo">Join</button>
+      <div id="cJoinStatus" class="csub" style="margin:0"></div>
+      <div id="cJoinErr" class="cerr"></div>
+      <button id="cBack3" class="link">Back</button>
+    </div>
+    <div id="cResultV" class="cview" hidden>
+      <div id="cResultTitle"></div>
+      <div id="cResultScore"></div>
+      <div id="cResultWait" class="cnote" hidden></div>
+      <button id="cRematch" hidden>Rematch</button>
+      <button id="cResultExit" class="ghost">Exit to menu</button>
+    </div>
+  </div>
+</div>
+<div id="vsMsg" hidden></div>
 <div id="overlay">
   <div class="badge" id="badge">Snake, in reverse</div>
   <h1 id="title">SNAKED</h1>
@@ -230,6 +309,7 @@
     </div>
   </div>
   <button id="startBtn"><span class="lbl" id="startLbl">Play</span><span class="sub" id="startSub">or press Space · arrow keys steer</span></button>
+  <button id="competeBtn" hidden>Play competitive</button>
   <p class="how touch-only">steer with the arrow buttons, or swipe</p>
   <div id="board"></div>
   <button id="fbLink">Send feedback</button></div>
@@ -290,7 +370,7 @@ const daySeed = d => [...d].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 1677
 let runDay = '';
 function newRun() {
   runDay = today();
-  seed = runKind === 'play' ? daySeed(runDay) : (Math.random() * 4294967296) >>> 0;   // placeApple derives each apple from it
+  seed = versus && vs ? vs.seed >>> 0 : runKind === 'play' ? daySeed(runDay) : (Math.random() * 4294967296) >>> 0;   // a match uses the room's apples   // placeApple derives each apple from it
   startLen = START_LEN;
   occ = new Uint8Array(COLS * ROWS);
   stones = new Uint16Array(COLS * ROWS);
@@ -380,11 +460,13 @@ function die(reason) {
   acc = interval();                                          // the body finishes its glide and stops dead
   shake = 1; burst(snake[0], '#ff5a6e', 28);
   tone(240, 0.5, 'sawtooth', 0.08, 50);
+  if (versus) vsFinish(false);
 }
 function win() {
   mode = 'won'; endT = 1.4; acc = interval();
   [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.16, 'square', 0.06, 0, i * 0.09));
   for (let n = 0; n < 4; n++) burst(snake[0], n % 2 ? '#ffd25f' : '#57d3ff', 26);
+  if (versus) vsFinish(true);
 }
 
 // ---- the demo bot (plays behind the menu, and doubles as the playtester) ----------------------
@@ -511,7 +593,7 @@ addEventListener('keydown', e => {
     return;
   }
   if ((e.key === 'p' || e.key === 'P' || e.key === 'Escape') && $('fb').hidden && !e.repeat && live()) { e.preventDefault(); pause(); return; }
-  if ((e.key === ' ' || e.code === 'Space' || e.key === 'Enter') && !$('overlay').hidden && $('fb').hidden && !e.repeat) { e.preventDefault(); primary(); }
+  if ((e.key === ' ' || e.code === 'Space' || e.key === 'Enter') && !$('overlay').hidden && $('fb').hidden && $('compete').hidden && !e.repeat) { e.preventDefault(); primary(); }
 });
 // Keys only reach the game once the page has focus (a fresh tab with the address bar focused, or an
 // embed like itch.io before its first click), so the menu only offers Space when it will actually work.
@@ -552,6 +634,7 @@ function step(dt) {
     endT -= dt;
     if (endT <= 0) {
       if (runKind === 'attract') { newRun(); mode = 'attract'; }
+      else if (versus) vsAfterRun();
       else showResult(mode === 'won');
     }
   }
@@ -602,8 +685,9 @@ function draw() {
   // must never be confused, so stone is darker, flatter and squarer than anything alive.
   for (let i = 0; i < stones.length; i++) {
     if (!stones[i]) continue;
-    const age = elapsed - stoneBorn[i], base = mix(stoneColor(stones[i]), [13, 20, 32], 0.45);
-    const col = age < 0.35 ? mix([255, 255, 255], base, age / 0.35) : base;
+    const sent = stones[i] === ATTACK;                         // stone your rival shed onto you: dim red, flashes red as it lands
+    const age = elapsed - stoneBorn[i], base = mix(sent ? [214, 72, 96] : stoneColor(stones[i]), [13, 20, 32], 0.45);
+    const col = age < 0.35 ? mix(sent ? [255, 90, 110] : [255, 255, 255], base, age / 0.35) : base;
     const x = cx(i) * CELL + 1.5, y = cy(i) * CELL + 1.5;
     ctx.fillStyle = rgb(col);
     rrect(x, y, CELL - 3, CELL - 3, 2);
@@ -677,7 +761,7 @@ function draw() {
     ctx.fillText(Math.max(1, nLeft), W / 2, H / 2);
     ctx.globalAlpha = 0.8; ctx.shadowBlur = 0; ctx.fillStyle = '#9fadc1';
     ctx.font = '600 13px -apple-system,Segoe UI,Roboto,sans-serif';
-    ctx.fillText(isTouch ? 'tap to skip' : 'space or click to skip', W / 2, H / 2 + 72);
+    ctx.fillText(versus ? 'match starting' : isTouch ? 'tap to skip' : 'space or click to skip', W / 2, H / 2 + 72);
     ctx.restore();
   }
 }
@@ -696,6 +780,7 @@ function startPlay() {
 }
 // Space, or a tap/click, knocks one second off the 3-2-1; skipping past 1 starts the run on the next frame.
 function skipCount() {
+  if (versus) return;                                         // a match's 3-2-1 is shared, so nobody can cut it short
   countT = Math.ceil(countT - 1e-6) - 1;
   if (countT > 0) tone(440, 0.08, 'square', 0.05);
 }
@@ -714,9 +799,10 @@ function resume() {
 }
 // Exit to menu: the run is dropped (nothing saved) and the demo snake plays behind the title again.
 // ponytail: one press, no "are you sure" step like Breakin's - add it if players lose runs by accident.
-function exitToMenu() {
-  if (mode !== 'paused') return;
-  $('pause').hidden = true; $('hud').hidden = true;
+function exitToMenu() { if (mode === 'paused') toMenu(); }
+function toMenu() {
+  $('pause').hidden = true; $('hud').hidden = true; $('compete').hidden = true; pad.classList.add('idle');
+  $('hWallsLbl').textContent = 'stone'; $('hWalls').parentElement.classList.remove('st-opp');
   runKind = 'attract'; newRun(); mode = 'attract'; pending = null;
   $('badge').textContent = MENU.badge; $('title').textContent = MENU.title; $('msg').innerHTML = MENU.msg;
   $('stats').hidden = true; $('nameEntry').hidden = true; $('board').hidden = false;
@@ -747,7 +833,8 @@ function showResult(won) {
 function hud() {
   renderChase();
   if (mode !== 'play') return;
-  $('hTime').textContent = elapsed.toFixed(1); $('hLen').textContent = snake.length; $('hWalls').textContent = stoneCount;
+  $('hTime').textContent = elapsed.toFixed(1); $('hLen').textContent = snake.length;
+  $('hWalls').textContent = versus && vs && vs.opp ? vs.opp.len : stoneCount;   // in a match the stone tile tracks your rival's length
 }
 $('startBtn').addEventListener('click', primary);
 $('pResume').addEventListener('click', resume);
@@ -928,8 +1015,266 @@ $('nameInput').addEventListener('input', () => {
 });
 $('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveRun(); } });
 
+// ---- competitive: race + attacks (shed_rooms from 03-rooms.sql) ---------------------------------------------------
+// Two players, same apples, own boards. Everything your rival sheds lands on your board as red stone.
+// First to finish wins. If one player is out, the other wins the moment they have fewer pieces left; both out = fewer pieces wins.
+// Sync is Breakin's: plain REST, one request a second per phone, no websocket.
+// Hidden until tested (Lok's call): the menu button only shows after ?vs=1 once, or on a ?join= invite link.
+const VS_Q = new URLSearchParams(location.search);
+const cleanCode = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+const JOIN = cleanCode(VS_Q.get('join'));
+const VS_ON = (() => {
+  try { if (VS_Q.has('vs')) localStorage.setItem('snaked-vs', '1'); return VS_Q.has('vs') || !!JOIN || localStorage.getItem('snaked-vs') === '1'; }
+  catch (e) { return VS_Q.has('vs') || !!JOIN; }
+})();
+const ROOMS = REST + 'shed_rooms', ATTACK = 65535;              // stones[] value marking a stone your rival sent you
+const CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';               // no I L O 0 1: unambiguous read aloud or typed
+const makeCode = () => Array.from({length: 6}, () => CODE_ABC[(Math.random() * CODE_ABC.length) | 0]).join('');
+const NAME_WORDS = ['BRISK', 'CALM', 'ODD', 'NEON', 'LUCKY', 'SLY', 'BOLD', 'TINY', 'VAST', 'ZESTY', 'SHARP', 'OTTER', 'COMET', 'FOX', 'MOTH', 'RAVEN', 'TIGER', 'HAWK', 'LYNX', 'CRANE', 'MOLE', 'WASP', 'KOI', 'YAK'];
+const vsSuggest = NAME_WORDS[(Math.random() * NAME_WORDS.length) | 0] + ((Math.random() * 10) | 0);
+let vs = null, vsTimer = 0, vsMsgT = 0;
+
+async function roomReq(method, q, body, prefer) {
+  const r = await fetch(ROOMS + q, {method, headers: Object.assign({apikey: SB_KEY, 'Content-Type': 'application/json'}, prefer ? {Prefer: prefer} : {}),
+    body: body ? JSON.stringify(body) : undefined});
+  if (!r.ok) throw new Error('rooms ' + r.status);
+  return prefer === 'return=minimal' ? null : r.json();
+}
+function toast(text) {
+  const m = $('vsMsg');
+  m.textContent = text; m.hidden = false; void m.offsetWidth; m.classList.add('show');
+  clearTimeout(vsMsgT);
+  vsMsgT = setTimeout(() => { m.classList.remove('show'); setTimeout(() => { m.hidden = true; }, 350); }, 2600);
+}
+function showView(v) {
+  [['choice', 'cChoice'], ['choice', 'cChoiceBtns'], ['invite', 'cInviteV'], ['join', 'cJoinV'], ['result', 'cResultV']].forEach(([k, id]) => { $(id).hidden = k !== v; });
+  $('cNameRow').hidden = !(v === 'choice' || v === 'join');
+  $('compete').hidden = false;
+}
+function openCompete(view) {
+  let n = ''; try { n = cleanName(localStorage.getItem('snaked-name')); } catch (e) {}
+  $('cName').value = n; $('cName').placeholder = 'Your name (or ' + vsSuggest + ')';
+  $('cChoiceErr').textContent = $('cJoinErr').textContent = $('cJoinStatus').textContent = '';
+  $('cJoinGo').hidden = false;
+  showView(view);
+}
+function vsName(errEl) {
+  const n = cleanName($('cName').value) || vsSuggest;
+  if (!nameAllowed(n)) { errEl.textContent = 'Pick a different name — that one is not allowed.'; return ''; }
+  try { localStorage.setItem('snaked-name', n); } catch (e) {}
+  return n;
+}
+function vsPoll() { clearInterval(vsTimer); vsTimer = setInterval(vsTick, 1000); }
+function vsStop() { clearInterval(vsTimer); vs = null; versus = false; }
+const endRoom = code => fetch(ROOMS + '?code=eq.' + code, {method: 'PATCH', keepalive: true,
+  headers: {apikey: SB_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal'}, body: JSON.stringify({phase: 'ended'})}).catch(() => {});
+function vsLeave() { if (vs) endRoom(vs.code); vsStop(); toMenu(); }
+addEventListener('pagehide', () => { if (vs) endRoom(vs.code); });
+
+async function vsInvite() {
+  const name = vsName($('cChoiceErr'));
+  if (!name) return;
+  showView('invite');
+  $('cCode').textContent = '······'; $('cStart').hidden = true; $('cCopy').hidden = true;
+  $('cInviteStatus').textContent = 'Opening a match…';
+  const code = makeCode();
+  try { await roomReq('POST', '', {code, host_name: name}, 'return=minimal'); }
+  catch (e) { $('cInviteStatus').textContent = 'Could not open a match. Competitive may not be switched on yet, or you are offline.'; return; }
+  if ($('cInviteV').hidden) { endRoom(code); return; }           // cancelled while it was opening
+  vs = {code, role: 'host', name, round: 0, oppName: '', lastOk: Date.now()};
+  $('cCode').textContent = code; $('cCopy').hidden = false;
+  $('cInviteStatus').textContent = 'Waiting for a friend to join…';
+  vsPoll();
+}
+async function vsJoin() {
+  const err = $('cJoinErr'), code = cleanCode($('cCodeIn').value);
+  err.textContent = '';
+  const name = vsName(err);
+  if (!name) return;
+  if (code.length !== 6) { err.textContent = 'The code is 6 letters and numbers.'; return; }
+  $('cJoinGo').disabled = true; $('cJoinStatus').textContent = 'Joining…';
+  try {
+    const rows = await roomReq('PATCH', '?code=eq.' + code + '&guest_name=is.null&phase=eq.lobby', {guest_name: name, guest_seen: new Date().toISOString()}, 'return=representation');
+    if (!rows.length) {
+      const got = await roomReq('GET', '?code=eq.' + code + '&select=phase');
+      $('cJoinStatus').textContent = '';
+      err.textContent = !got.length ? 'No match with that code. Check it with your friend.' : got[0].phase === 'ended' ? 'That match has finished.' : 'That match already has two players.';
+      return;
+    }
+    vs = {code, role: 'guest', name, round: rows[0].round, oppName: rows[0].host_name, lastOk: Date.now()};
+    $('cJoinGo').hidden = true; $('cNameRow').hidden = true;
+    $('cJoinStatus').textContent = 'You joined ' + rows[0].host_name + '. Waiting for them to start…';
+    vsPoll();
+  } catch (e) {
+    $('cJoinStatus').textContent = '';
+    err.textContent = 'Could not reach the match. Competitive may not be switched on yet, or you are offline.';
+  } finally { $('cJoinGo').disabled = false; }
+}
+async function vsStart() {
+  if (!vs || vs.role !== 'host') return;
+  const round = vs.round + 1, room = {phase: 'live', round, seed: (Math.random() * 2147483647) | 0, start_at: new Date(Date.now() + 3500).toISOString(),
+    host_len: 30, host_done: false, host_won: false, host_secs: 0, guest_len: 30, guest_done: false, guest_won: false, guest_secs: 0};
+  $('cStart').disabled = $('cRematch').disabled = true;
+  try { await roomReq('PATCH', '?code=eq.' + vs.code, room, 'return=minimal'); }
+  catch (e) { $('cInviteStatus').textContent = 'Could not start. Try again.'; return; }
+  finally { $('cStart').disabled = $('cRematch').disabled = false; }
+  if (!vs) return;
+  vs.round = round; vsBegin(room);
+}
+
+// One request a second: send my own columns (only for the round I'm in, so a late write can never undo a rematch's reset)
+// and read the whole room back.
+async function vsTick() {
+  const v = vs;
+  if (!v || v.busy) return;
+  const me = v.role, op = me === 'host' ? 'guest' : 'host';
+  v.busy = true;
+  let room = null;
+  try {
+    const body = {[me + '_seen']: new Date().toISOString()};
+    if (v.round > 0) Object.assign(body, {[me + '_len']: v.done ? v.len : snake.length, [me + '_done']: !!v.done, [me + '_won']: !!v.won,
+      [me + '_secs']: v.done ? v.secs : Math.round(elapsed * 10) / 10});
+    const rows = await roomReq('PATCH', '?code=eq.' + v.code + '&round=eq.' + v.round, body, 'return=representation');
+    room = rows[0] || (await roomReq('GET', '?code=eq.' + v.code))[0] || null;
+    v.lastOk = Date.now();
+  } catch (e) { return; } finally { v.busy = false; }
+  if (vs !== v) return;
+  if (!room || room.phase === 'ended') { vsGone(room ? (room[op + '_name'] || 'Your friend') + ' left the match.' : 'The match was closed.'); return; }
+  v.oppName = room[op + '_name'] || v.oppName;
+  if (room.phase === 'live' && room.round > v.round) { v.round = room.round; vsBegin(room); return; }
+  if (v.round > 0 && room.round === v.round) {
+    const prevDone = v.opp && v.opp.done;
+    v.opp = {name: v.oppName || 'Rival', len: room[op + '_len'], done: room[op + '_done'], won: room[op + '_won'], secs: +room[op + '_secs'],
+      seen: Date.parse(room[op + '_seen'] || '') || Date.now()};
+    vsUpdate(prevDone);
+  } else if (me === 'host') {
+    $('cInviteStatus').textContent = room.guest_name ? room.guest_name + ' joined. Ready when you are.' : 'Waiting for a friend to join…';
+    $('cStart').hidden = !room.guest_name;
+  }
+}
+function vsBegin(room) {
+  Object.assign(vs, {seed: +room.seed, done: false, won: false, len: START_LEN, secs: 0, dropped: 0, resultShown: false,
+    opp: {name: vs.oppName || 'Rival', len: START_LEN, done: false, won: false, secs: 0, seen: Date.now()}});
+  versus = true;
+  $('compete').hidden = true; $('overlay').hidden = true; $('pause').hidden = true;
+  runKind = 'play'; newRun(); pending = null; swipe = null;
+  mode = 'count'; countT = Math.max(0.5, Math.min(5, (Date.parse(room.start_at) - Date.now()) / 1000));
+  pad.classList.remove('idle'); $('hud').hidden = false;
+  $('hWallsLbl').textContent = vs.opp.name; $('hWalls').parentElement.classList.add('st-opp');
+  $('hTime').textContent = '0.0'; $('hLen').textContent = snake.length; $('hWalls').textContent = START_LEN;
+  tone(440, 0.08, 'square', 0.05);
+}
+function vsFinish(won) {
+  if (!vs || vs.done) return;
+  vs.done = true; vs.won = won; vs.len = snake.length; vs.secs = Math.round(elapsed * 10) / 10;
+  vsTick();                                                   // tell the rival now, not on the next beat
+}
+// What the room says right now, the same on both phones: 'win' | 'lose' | 'draw' | 'left' | null (still going)
+function vsDecide() {
+  const op = vs.opp, me = {won: vs.won, done: vs.done, len: vs.done ? vs.len : snake.length, secs: vs.secs};
+  if (!op) return null;
+  if (me.won && op.won) return me.secs < op.secs ? 'win' : me.secs > op.secs ? 'lose' : 'draw';
+  if (me.won) return 'win';
+  if (op.won) return 'lose';
+  if (!op.done && vs.lastOk - op.seen > 15000) return 'left';
+  if (me.done && op.done) return me.len < op.len ? 'win' : me.len > op.len ? 'lose' : 'draw';
+  if (op.done && me.len < op.len) return 'win';
+  if (me.done && op.len < me.len) return 'lose';
+  return null;
+}
+function vsUpdate(prevDone) {
+  const op = vs.opp, running = mode === 'play' || mode === 'count';
+  if (running && !vs.done) {
+    const target = Math.max(0, Math.min(START_LEN - 1, START_LEN - op.len));   // every piece they've shed lands on you
+    if (target > vs.dropped && !vs.dropped) toast(op.name + '’s shed is landing on your board');
+    while (vs.dropped < target) { dropStone(); vs.dropped++; }
+    if (op.done && !prevDone && !op.won) toast(op.name + ' is out with ' + op.len + ' left — get below ' + op.len + ' to win');
+  }
+  const res = vsDecide();
+  if (res && running) {                                       // decided while I'm still going: my board stops where it is
+    if (!vs.done) { vs.done = true; vs.won = false; vs.len = snake.length; vs.secs = Math.round(elapsed * 10) / 10; }
+    vsAfterRun();
+  } else if (vs.resultShown) vsRenderResult();
+}
+// A rival's stone lands on a free square at least 4 steps from your head, and never where it would cut you off from the apple.
+function dropStone() {
+  const head = snake[0], free = [];
+  for (let j = 0; j < COLS * ROWS; j++)
+    if (!stones[j] && !occ[j] && j !== apple && Math.abs(cx(j) - cx(head)) + Math.abs(cy(j) - cy(head)) >= 4) free.push(j);
+  for (let tries = 0; tries < 12 && free.length; tries++) {
+    const k = (Math.random() * free.length) | 0, j = free[k];
+    stones[j] = ATTACK; stoneBorn[j] = elapsed;
+    if (apple < 0 || headReaches(apple)) { burst(j, '#ff5a6e', 8); return; }
+    stones[j] = 0; free.splice(k, 1);
+  }
+}
+function headReaches(target) {
+  const tail = snake[snake.length - 1], seen = new Uint8Array(COLS * ROWS), stack = [snake[0]];
+  seen[snake[0]] = 1;
+  while (stack.length) {
+    const i = stack.pop();
+    if (i === target) return true;
+    for (const d of ORDER) {
+      const j = step1(i, d);
+      if (j >= 0 && !seen[j] && !stones[j] && !(occ[j] && j !== tail)) { seen[j] = 1; stack.push(j); }
+    }
+  }
+  return false;
+}
+function vsAfterRun() {
+  if (!vs) return;
+  mode = 'vsover'; pad.classList.add('idle'); vs.resultShown = true;
+  showView('result'); vsRenderResult();
+}
+function vsRenderResult() {
+  const res = vsDecide(), op = vs.opp, mine = vs.done ? vs.len : snake.length, t = $('cResultTitle');
+  t.className = res === 'win' || res === 'left' ? 'win' : res === 'lose' ? 'lose' : res === 'draw' ? 'tie' : '';
+  t.textContent = res === 'win' ? 'You win!' : res === 'left' ? op.name + ' left — you win' : res === 'lose' ? op.name + ' wins' : res === 'draw' ? 'Draw' : 'You’re out';
+  const line = (who, won, len, secs) => who + ' ' + (won ? 'finished in ' + (+secs).toFixed(1) + 's' : len + ' left');
+  $('cResultScore').textContent = line('You', vs.won, mine, vs.secs) + '  ·  ' + line(op.name, op.won, op.len, op.secs);
+  const wait = $('cResultWait');
+  wait.textContent = !res ? op.name + ' is still going with ' + op.len + ' left. They need fewer than ' + mine + ' to win.'
+    : res === 'left' ? 'The match is over.' : vs.role === 'guest' ? 'Waiting for ' + op.name + ' to start a rematch…' : '';
+  wait.hidden = !wait.textContent;
+  $('cRematch').hidden = !(res && res !== 'left' && vs.role === 'host');
+}
+function vsGone(msg) {
+  const running = mode === 'play' || mode === 'count';
+  vsStop();
+  if (running) mode = 'vsover';
+  pad.classList.add('idle');
+  showView('result');
+  $('cResultTitle').className = ''; $('cResultTitle').textContent = 'Match over';
+  $('cResultScore').textContent = msg; $('cResultWait').hidden = true; $('cRematch').hidden = true;
+}
+
+$('competeBtn').addEventListener('click', () => openCompete('choice'));
+$('cInvite').addEventListener('click', vsInvite);
+$('cJoin').addEventListener('click', () => { $('cJoinErr').textContent = ''; showView('join'); });
+$('cBack1').addEventListener('click', () => { $('compete').hidden = true; });
+$('cBack2').addEventListener('click', vsLeave);
+$('cBack3').addEventListener('click', () => { if (vs) vsLeave(); else showView('choice'); });
+$('cJoinGo').addEventListener('click', vsJoin);
+$('cCodeIn').addEventListener('input', () => { const c = cleanCode($('cCodeIn').value); if (c !== $('cCodeIn').value) $('cCodeIn').value = c; });
+$('cCodeIn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); vsJoin(); } });
+$('cName').addEventListener('input', () => { const c = cleanName($('cName').value); if (c !== $('cName').value) $('cName').value = c; });
+$('cStart').addEventListener('click', vsStart);
+$('cRematch').addEventListener('click', vsStart);
+$('cResultExit').addEventListener('click', vsLeave);
+$('cCopy').addEventListener('click', async () => {
+  if (!vs) return;
+  const url = location.origin + location.pathname + '?join=' + vs.code, b = $('cCopy');
+  try {
+    if (navigator.share && isTouch) { await navigator.share({title: 'Snaked', text: 'Race me at Snaked — code ' + vs.code, url}); return; }
+    await navigator.clipboard.writeText(url); b.textContent = 'Link copied';
+  } catch (e) { if (e && e.name === 'AbortError') return; b.textContent = url; }
+  setTimeout(() => { b.textContent = 'Share join link'; }, 2500);
+});
+
 // ---- loop ----------------------------------------------------------------------------
 runKind = 'attract'; newRun(); mode = 'attract'; fit(); keyHint(); refreshBoard();
+$('competeBtn').hidden = !VS_ON;
+if (JOIN) { openCompete('join'); $('cCodeIn').value = JOIN; }   // someone opened a friend's invite link
 addEventListener('resize', fit);
 let last = 0;
 function frame(ts) {
