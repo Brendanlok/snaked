@@ -73,18 +73,31 @@
     50%{transform:scale(1.045);box-shadow:0 14px 46px rgba(72,162,243,.62);}}
   @media (prefers-reduced-motion:reduce){#startBtn{animation:none;}}
   .how{font-size:12px!important;color:#6b7a90!important;margin-top:10px!important;}
-  /* on-screen arrows for touch: a d-pad (cross) under the board, in Breakin's secondary-button style (Lok's call, 2026-09-15).
-     Laid out even when idle (visibility, not display) so the board can always be sized to sit above it. */
-  #pad{position:fixed;left:0;right:0;bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  /* on-screen arrows for touch: a faint d-pad cross at the foot of the screen, over the board like Breakin's move zones
+     (Lok's call, 2026-09-15). See-through so stone and snake still read underneath; only the buttons take touches. */
+  #pad{position:fixed;left:0;right:0;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:20;pointer-events:none;
     display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,52px);gap:6px;
     justify-content:center;touch-action:none;}
-  #pad .hub{grid-column:2;grid-row:2;background:#131b27;border:1px solid #243349;border-radius:14px;}
+  #pad .hub{grid-column:2;grid-row:2;background:rgba(120,160,220,.03);border-radius:14px;}
   #pad.idle{visibility:hidden;}
-  #pad button{display:flex;align-items:center;justify-content:center;padding:0;
-    color:#cdd6e4;background:#18222f;border:1px solid #2f3f57;border-radius:14px;cursor:pointer;
+  #pad button{display:flex;align-items:center;justify-content:center;padding:0;pointer-events:auto;
+    color:rgba(230,240,255,.34);background:rgba(120,160,220,.07);border:1px solid rgba(120,160,220,.14);border-radius:14px;cursor:pointer;
     -webkit-tap-highlight-color:transparent;touch-action:none;}
   #pad button svg{width:26px;height:26px;fill:currentColor;}
-  #pad button.on{background:#2a3a52;border-color:#48a2f3;color:#84c4ff;box-shadow:0 0 18px rgba(72,162,243,.35);}
+  #pad button.on{background:rgba(120,160,220,.2);border-color:rgba(132,196,255,.45);color:rgba(230,240,255,.8);}
+  #sab{position:fixed;left:0;bottom:0;width:0;height:env(safe-area-inset-bottom,0px);pointer-events:none;}
+  /* "Chasing" panel: today's top 5 in the dead space beside the board on wide screens. Copied from Breakin. */
+  #chase{position:fixed;z-index:28;box-sizing:border-box;width:176px;padding:12px 13px 10px;border-radius:12px;
+    background:#0a0f18;border:1px solid rgba(120,150,200,.16);pointer-events:none;
+    font-variant-numeric:tabular-nums;animation:cfade .5s ease-out both;}
+  @keyframes cfade{from{opacity:0;}to{opacity:1;}}
+  #chase .ct{color:#67788f;font-size:10px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:9px;text-align:center;}
+  #chase .row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:4px 2px;font-size:13px;color:#c4cedd;}
+  #chase .row .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #chase .row b{font-weight:800;color:#e8edf4;}
+  #chase .row.passed,#chase .row.passed b{color:#46536a;text-decoration:line-through;}
+  #chase .row.you{margin-top:7px;padding-top:8px;border-top:1px solid rgba(120,150,200,.16);color:#ffd25f;}
+  #chase .row.you b{color:#ffd25f;}
   #pad .u{grid-column:2;grid-row:1;} #pad .l{grid-column:1;grid-row:2;}
   #pad .d{grid-column:2;grid-row:3;} #pad .r{grid-column:3;grid-row:2;}
   /* leaderboard + name box: copied from Breakin */
@@ -157,9 +170,16 @@
     color:#cdd6e4;background:#18222f;border:1px solid #2f3f57;border-radius:12px;cursor:pointer;
     -webkit-tap-highlight-color:transparent;}
   #hud .hbtn svg{width:22px;height:22px;}
-  #pauseBtn.on .bars, #pauseBtn:not(.on) .play{display:none;}
-  #restartBtn{margin-top:12px;padding:10px 30px;font-size:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-    color:#cdd6e4;background:#18222f;border:1px solid #2f3f57;border-radius:999px;cursor:pointer;font-family:inherit;}
+  /* pause screen: copied from Breakin (Lok's call, 2026-09-15) */
+  #pause{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
+    background:rgba(6,9,14,.72);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);padding:20px;}
+  #pause .pmenu{display:flex;flex-direction:column;align-items:center;gap:12px;}
+  #pause .ptitle{font-size:15px;letter-spacing:.3em;text-transform:uppercase;color:#8ba0bd;margin-bottom:6px;}
+  #pause .pmenu button{padding:13px 40px;font-size:16px;font-weight:700;border:0;border-radius:999px;cursor:pointer;font-family:inherit;}
+  #pResume{background:linear-gradient(180deg,#84c4ff,#48a2f3);color:#05121f;box-shadow:0 8px 26px rgba(72,162,243,.38);}
+  #pExit{background:#1b2637;color:#cdd6e4;}
+  #pause .phint{margin-top:-4px;font-size:11px;letter-spacing:.06em;color:#67788f;}
+  #pause .phint b{color:#9fb0c7;font-weight:700;}
   #snd.off{color:#6b7a90;}
   #snd.off .w, #snd:not(.off) .x{display:none;}
   /* a phone held sideways leaves ~150px between the score row and the arrows - too small to play, so ask for upright.
@@ -178,7 +198,6 @@
   <div class="stat st-len"><b id="hLen">30</b><i>length</i></div>
   <div class="stat st-walls"><b id="hWalls">0</b><i>stone</i></div>
   <button id="snd" class="hbtn" aria-label="Sound on"><svg viewBox="0 0 24 24"><path d="M3 9h4l5-4v14l-5-4H3z" fill="currentColor"/><path class="w" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="x" d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-  <button id="pauseBtn" class="hbtn" aria-label="Pause"><svg viewBox="0 0 24 24"><path class="bars" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/><path class="play" d="M8 5l11 7-11 7z" fill="currentColor"/></svg></button>
 </div>
 <div id="pad" class="idle">
   <button class="u" data-d="U" aria-label="up"><svg viewBox="0 0 24 24"><path d="M12 5l8 10H4z"/></svg></button>
@@ -186,6 +205,17 @@
   <div class="hub" aria-hidden="true"></div>
   <button class="d" data-d="D" aria-label="down"><svg viewBox="0 0 24 24"><path d="M12 19L4 9h16z"/></svg></button>
   <button class="r" data-d="R" aria-label="right"><svg viewBox="0 0 24 24"><path d="M19 12L9 20V4z"/></svg></button>
+</div>
+<div id="sab"></div>
+<div id="chase" hidden></div>
+<div id="pause" hidden>
+  <div class="pmenu">
+    <div class="ptitle">PAUSED</div>
+    <button id="pResume">Continue</button>
+    <div class="phint">or press <b>Spacebar</b></div>
+    <button id="pExit">Exit to menu</button>
+    <div class="phint">or press <b>Esc</b></div>
+  </div>
 </div>
 <div id="overlay">
   <div class="badge" id="badge">Snake, in reverse</div>
@@ -200,7 +230,6 @@
     </div>
   </div>
   <button id="startBtn"><span class="lbl" id="startLbl">Play</span><span class="sub" id="startSub">or press Space · arrow keys steer</span></button>
-  <button id="restartBtn" hidden>Restart</button>
   <p class="how touch-only">steer with the arrow buttons, or swipe</p>
   <div id="board"></div>
   <button id="fbLink">Send feedback</button></div>
@@ -245,7 +274,9 @@ let mode = 'menu', runKind = 'attract', endT = 0;
 let seed, startLen, snake, occ, stones, stoneBorn, stoneCount, apple, dir, queue, elapsed, apples, acc;
 let prevHead, lastTail, chomp = -1;   // where the head came from, the cell the tail just left, and an apple the head is still gliding into
 let parts = [], shake = 0, deathReason = '', countT = 0;
-const COUNT_S = 3;          // 3-2-1 before a run, and again when coming back from a pause. Clock stopped, so times are unchanged.
+let floats = [], lastShed = 0;   // the little "-2" that rises off each apple, and how many pieces that apple shed
+const FLOAT_S = 0.9;        // how long a "-2" takes to rise and fade
+const COUNT_S = 3;         // 3-2-1 before a run, and again when coming back from a pause. Clock stopped, so times are unchanged.
 
 const cx = i => i % COLS, cy = i => (i / COLS) | 0;
 function step1(i, d) {
@@ -327,6 +358,7 @@ function tick() {
     apples++;
     if (snake.length === 1) { burst(ni, '#ffd25f', 14); return win(); }
     const k = Math.min(SHED, snake.length - 1);
+    lastShed = k;
     for (let s = 0; s < k; s++) {
       const t = snake.pop(); occ[t]--;
       stones[t] = ++stoneCount; stoneBorn[t] = elapsed;
@@ -337,7 +369,7 @@ function tick() {
   }
 }
 function chompFx() {
-  burst(chomp, '#ffd25f', 14); chomp = -1;
+  burst(chomp, '#ffd25f', 14); floats.push({i: chomp, t: 0, text: '-' + lastShed}); chomp = -1;
   const f = 440 * Math.pow(2, (startLen - snake.length) / 24);   // each apple's blip is pitched higher as you shrink
   tone(f, 0.09, 'square', 0.06, f * 1.5);
   tone(120, 0.14, 'triangle', 0.14, 60, 0.04);              // the thud of pieces turning to stone
@@ -450,7 +482,14 @@ document.addEventListener('pointermove', e => {
 });
 const endSwipe = () => { swipe = null; };
 // a tap or click that isn't a swipe knocks one second off the 3-2-1
-document.addEventListener('pointerup', () => { if (swipe && !swipe.moved && mode === 'count') skipCount(); endSwipe(); });
+document.addEventListener('pointerup', e => {
+  if (swipe && !swipe.moved) {
+    if (mode === 'count') skipCount();
+    // Breakin's rule: a tap on the top half of the play area pauses (the bottom half is where thumbs steer)
+    else if (mode === 'play' && e.target === canvas && e.clientY < canvas.getBoundingClientRect().top + canvas.clientHeight / 2) pause();
+  }
+  endSwipe();
+});
 document.addEventListener('pointercancel', endSwipe);
 // On-screen arrows: a turn lands on pointerdown, the instant a thumb touches, not on release.
 const isTouch = matchMedia('(pointer:coarse)').matches || navigator.maxTouchPoints > 0 || /[?&]touch/.test(location.search);
@@ -466,7 +505,12 @@ addEventListener('keydown', e => {
   if (e.target.closest && e.target.closest('input, textarea')) return;   // typing a name must not steer, start or pause
   if (KEYS[e.key] && live()) { e.preventDefault(); turn(KEYS[e.key]); return; }
   if ((e.key === ' ' || e.code === 'Space') && mode === 'count') { e.preventDefault(); if (!e.repeat) skipCount(); return; }
-  if ((e.key === 'p' || e.key === 'P' || e.key === 'Escape') && $('fb').hidden && !e.repeat && (live() || mode === 'paused')) { e.preventDefault(); togglePause(); return; }
+  if (mode === 'paused' && !e.repeat) {                        // Breakin's keys: Space carries on, Esc exits to the menu
+    if (e.key === 'Escape') { e.preventDefault(); exitToMenu(); }
+    else if (e.key === ' ' || e.code === 'Space' || e.key === 'Enter' || e.key === 'p' || e.key === 'P') { e.preventDefault(); resume(); }
+    return;
+  }
+  if ((e.key === 'p' || e.key === 'P' || e.key === 'Escape') && $('fb').hidden && !e.repeat && live()) { e.preventDefault(); pause(); return; }
   if ((e.key === ' ' || e.code === 'Space' || e.key === 'Enter') && !$('overlay').hidden && $('fb').hidden && !e.repeat) { e.preventDefault(); primary(); }
 });
 // Keys only reach the game once the page has focus (a fresh tab with the address bar focused, or an
@@ -488,6 +532,8 @@ function burst(i, col, n) {
 function step(dt) {
   for (const p of parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.94; p.vy *= 0.94; p.life -= dt; }
   parts = parts.filter(p => p.life > 0);
+  for (const f of floats) f.t += dt;
+  floats = floats.filter(f => f.t < FLOAT_S);
   shake = Math.max(0, shake - dt * 2.5);
   if (mode === 'play' || mode === 'attract') {
     elapsed += dt; acc += dt * 1000;
@@ -518,8 +564,10 @@ const SIDEWAYS = matchMedia('(pointer:coarse) and (orientation:landscape) and (m
 function fit() {
   if (SIDEWAYS.matches) pause();                              // turning the phone mid-run must not kill it behind the notice
   const top = parseFloat(getComputedStyle(document.getElementById('wrap')).paddingTop) || 82;
-  const floor = isTouch ? pad.getBoundingClientRect().top - 10 : innerHeight - 12;   // the board always ends above the arrows
-  const aw = Math.min(innerWidth - 16, 480), ah = floor - top;
+  // As big as the screen allows, like Breakin: full width on a phone, down to the foot of the screen. The faint d-pad
+  // sits at the foot, so on tall phones it is mostly below the board and on short ones it overlaps the bottom rows.
+  const floor = innerHeight - 12 - document.getElementById('sab').offsetHeight;
+  const aw = Math.min(innerWidth - (isTouch ? 0 : 16), 480), ah = floor - top;
   scale = Math.max(0.3, Math.min(aw / W, ah / H));
   dpr = Math.min(2, window.devicePixelRatio || 1);
   canvas.style.width = W * scale + 'px'; canvas.style.height = H * scale + 'px';
@@ -601,11 +649,22 @@ function draw() {
 
   for (const p of parts) { ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 2.5)); ctx.fillStyle = p.col; ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3); }
   ctx.globalAlpha = 1;
+  if (floats.length) {                                        // "-2" in the length tile's gold: rises off the apple, eases out, fades
+    ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '800 15px -apple-system,Segoe UI,Roboto,sans-serif';
+    ctx.fillStyle = '#ffd25f'; ctx.shadowColor = '#ffd25f'; ctx.shadowBlur = 10;
+    for (const f of floats) {
+      const e = f.t / FLOAT_S;
+      ctx.globalAlpha = Math.min(1, (1 - e) * 2.2);
+      ctx.fillText(f.text, cx(f.i) * CELL + CELL / 2, Math.max(10, cy(f.i) * CELL + CELL / 2 - 10 - 30 * (1 - (1 - e) * (1 - e))));
+    }
+    ctx.restore();
+  }
 
   if ((mode === 'play' || (mode === 'count' && elapsed === 0)) && elapsed < 2.5) {
     ctx.fillStyle = 'rgba(159,173,193,' + Math.min(0.8, 2.5 - elapsed) + ')';
     ctx.font = '600 13px -apple-system,Segoe UI,Roboto,sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText(isTouch ? 'tap the arrows to steer' : 'arrow keys to steer', W / 2, 40);
+    ctx.fillText(isTouch ? 'arrows steer · tap up here to pause' : 'arrow keys steer · click up here or P to pause', W / 2, 40);
   }
   if (mode === 'count') {                                      // big 3-2-1, each number popping in and settling
     const nLeft = Math.ceil(countT), f = nLeft - countT;       // f: 0 -> 1 through each second
@@ -625,11 +684,12 @@ function draw() {
 
 // ---- screens -------------------------------------------------------------------------
 const $ = id => document.getElementById(id);
+const MENU = {badge: $('badge').textContent, title: $('title').textContent, msg: $('msg').innerHTML};   // the title screen's words, for Exit to menu
 function startPlay() {
   runKind = 'play'; newRun(); mode = 'count'; countT = COUNT_S; swipe = null; pending = null;
   tone(440, 0.08, 'square', 0.05);                           // the "3" of the countdown
   try { localStorage.setItem('shed-games', gameCount() + 1); } catch (e) {}
-  $('restartBtn').hidden = true; $('pauseBtn').classList.remove('on'); $('pauseBtn').setAttribute('aria-label', 'Pause'); keyHint();
+  keyHint();
   pad.classList.remove('idle');
   $('overlay').hidden = true; $('hud').hidden = false;
   $('hTime').textContent = '0.0'; $('hLen').textContent = snake.length; $('hWalls').textContent = 0;
@@ -642,27 +702,28 @@ function skipCount() {
 // The pause button, P / Esc, a locked phone, a notification or a switched tab all open the pause screen.
 // The clock is stopped there; Resume counts 3-2-1 before play carries on.
 function pause() {
-  if (!live()) return;
-  mode = 'paused'; queue.length = 0; swipe = null;
-  $('badge').textContent = 'Clock stopped';
-  $('title').textContent = 'PAUSED';
-  $('msg').innerHTML = 'Take a breath. Resume gives you a 3-2-1 first.';
-  $('stats').hidden = false;
-  $('stats').innerHTML = 'Length <b>' + snake.length + '</b> &nbsp;·&nbsp; Time <b>' + elapsed.toFixed(1) + 's</b>';
-  $('startLbl').textContent = 'Resume'; $('startSub').textContent = 'or press Space · P';
-  $('restartBtn').hidden = false; $('pauseBtn').classList.add('on'); $('pauseBtn').setAttribute('aria-label', 'Resume');
-  $('board').hidden = true; $('nameEntry').hidden = true;
-  $('overlay').hidden = false; pad.classList.add('idle');      // the score row stays up, so sound can be switched here too
+  if (!live() || versus) return;                              // a race never stops for one player
+  mode = 'paused'; pausedAt = performance.now(); queue.length = 0; swipe = null;
+  $('pause').hidden = false; pad.classList.add('idle');
 }
 function resume() {
   if (mode !== 'paused') return;
   mode = 'count'; countT = COUNT_S;
-  $('restartBtn').hidden = true; $('pauseBtn').classList.remove('on'); $('pauseBtn').setAttribute('aria-label', 'Pause');
-  $('overlay').hidden = true; pad.classList.remove('idle'); keyHint();
+  $('pause').hidden = true; pad.classList.remove('idle'); keyHint();
   tone(440, 0.08, 'square', 0.05);
 }
-const togglePause = () => mode === 'paused' ? resume() : pause();
-const primary = () => mode === 'paused' ? resume() : startPlay();   // the big pill button: Resume when paused, Play otherwise
+// Exit to menu: the run is dropped (nothing saved) and the demo snake plays behind the title again.
+// ponytail: one press, no "are you sure" step like Breakin's - add it if players lose runs by accident.
+function exitToMenu() {
+  if (mode !== 'paused') return;
+  $('pause').hidden = true; $('hud').hidden = true;
+  runKind = 'attract'; newRun(); mode = 'attract'; pending = null;
+  $('badge').textContent = MENU.badge; $('title').textContent = MENU.title; $('msg').innerHTML = MENU.msg;
+  $('stats').hidden = true; $('nameEntry').hidden = true; $('board').hidden = false;
+  $('startLbl').textContent = 'Play'; keyHint();
+  $('overlay').hidden = false; refreshBoard();
+}
+const primary = startPlay;
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
 addEventListener('blur', pause);
 function showResult(won) {
@@ -684,12 +745,16 @@ function showResult(won) {
   refreshBoard().then(offerSave);
 }
 function hud() {
+  renderChase();
   if (mode !== 'play') return;
   $('hTime').textContent = elapsed.toFixed(1); $('hLen').textContent = snake.length; $('hWalls').textContent = stoneCount;
 }
 $('startBtn').addEventListener('click', primary);
-$('restartBtn').addEventListener('click', startPlay);
-$('pauseBtn').addEventListener('click', () => { togglePause(); $('pauseBtn').blur(); });
+$('pResume').addEventListener('click', resume);
+$('pExit').addEventListener('click', exitToMenu);
+if (isTouch) document.querySelectorAll('#pause .phint').forEach(el => { el.hidden = true; });   // a phone has no Spacebar or Esc
+// on the pause screen a tap anywhere that isn't a button carries on (the tap that paused is ignored)
+$('pause').addEventListener('click', e => { if (mode === 'paused' && performance.now() - pausedAt > 350 && !e.target.closest('button')) resume(); });
 
 // ---- feedback + crash reports (Supabase, anon insert-only tables from 01-inbox.sql) --------------
 const REST = 'https://ekcnpuwclkjnqnntlvot.supabase.co/rest/v1/';
@@ -836,6 +901,26 @@ async function saveRun() {
   await refreshBoard();
 }
 $('saveBtn').addEventListener('click', saveRun);
+
+// ---- "Chasing" panel (wide screens only): today's top 5 beside the board, crossed out as you pass them, like Breakin ----
+const CHASE_W = 176, CHASE_GAP = 26;
+let chaseKey = '', versus = false, pausedAt = 0;
+function renderChase() {
+  const t = rowsFor('today'), list = (t.length ? t : rowsFor('all')).slice().sort(rankCmp).slice(0, 5);
+  const r = canvas.getBoundingClientRect(), left = r.left - CHASE_GAP - CHASE_W;
+  const show = runKind === 'play' && (mode === 'play' || mode === 'count') && !versus && left >= 12 && list.length > 0;
+  $('chase').hidden = !show;
+  const key = show ? snake.length + '|' + list.map(s => s.name + s.len + s.secs).join() + '|' + left + '|' + r.top : '';
+  if (key === chaseKey) return;
+  chaseKey = key;
+  if (!show) return;
+  const you = {won: false, len: snake.length, secs: elapsed}, passed = s => rankCmp(you, s) < 0;   // where you'd rank if the run ended now
+  $('chase').style.left = left + 'px'; $('chase').style.top = r.top + 'px';
+  $('chase').innerHTML = '<div class="ct">' + (list.every(passed) ? 'top of the board' : 'chasing') + '</div>'
+    + list.map(s => '<div class="row' + (passed(s) ? ' passed' : '') + '"><span class="nm">' + esc(s.name) + '</span><b>'
+      + (s.won ? (+s.secs).toFixed(1) + 's' : (s.len | 0) + ' left') + '</b></div>').join('')
+    + '<div class="row you"><span class="nm">You</span><b>' + snake.length + ' left</b></div>';
+}
 $('nameInput').addEventListener('input', () => {
   const c = cleanName($('nameInput').value);
   if (c !== $('nameInput').value) $('nameInput').value = c;
