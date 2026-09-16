@@ -8,7 +8,7 @@ Assets in this folder:
 |---|---|
 | `snaked-run.gif` | 27s loop, 324x568, 1.6 MB. One full winning run by the demo bot at real speed: 30 pieces down to 1, the board filling with stone, the speed-up at the end, then a title card. Lead with this, the speed-up is invisible in a still. |
 | `itch-cover.png` | 630x500 itch cover: SNAKED over a real mid-run board. |
-| `shot-0-menu.png` | Menu at phone width (2x). |
+| `shot-0-menu.png` | Menu at phone width (2x), re-shot 16 Sep. |
 | `shot-1-long-and-slow.png` | 3s in: full length, almost no stone. |
 | `shot-2-halfway.png` | Length 14, stone spreading. |
 | `shot-3-nearly-gone.png` | Length 4, fast, boxed in by stone. Strongest single image. |
@@ -116,8 +116,9 @@ Not included. Breakin skipped HN (Lok, 13 Sep); same call for Snaked unless Lok 
   real run on your phone before posting to prove it works end to end.
 - **Screenshots, GIF and cover are from 15 Sep morning, before the new phone layout**
   (board filling the screen, d-pad over its foot, sound link on the menu). The
-  gameplay shots still read fine; `shot-0-menu.png` shows the old menu. Re-shoot
-  from your phone during Thursday's pass, or ask a session to re-render them.
+  gameplay shots still read fine. `shot-0-menu.png` was re-shot from the live link
+  on 16 Sep (sound link, "tap to start", leaderboard panel), but the board in it is
+  empty - re-shoot it once a few real runs are on today's board.
 - **"Tested it on my own phone":** true only after Thursday's device pass.
 - **"More than twice as fast":** 0.16s per move at full length vs 0.06s at length 1
   is 2.7x. Correct as long as the fixed rules don't change.
