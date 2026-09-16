@@ -895,10 +895,11 @@ const SB_KEY = 'sb_publishable_pfng2gwF0IdAZfwbwhWPWQ_bfHOMIAC';   // publishabl
 const DEV = /[?&#]dev(=1|\b)/.test(location.href);
 // Resolves true only if the row really landed - "sent" is never shown without it.
 // Until Lok runs 01-inbox.sql the tables don't exist, so this resolves false and the player is told.
+let postStatus = 0;                                           // last HTTP status; 404 = that table's SQL hasn't been run
 function post(table, body) {
   if (DEV || location.protocol !== 'https:') return Promise.resolve(false);   // file:// dev runs stay out of the live inbox
   return fetch(REST + table, {method: 'POST', headers: {apikey: SB_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal'},
-    body: JSON.stringify(body)}).then(r => r.ok, () => false);
+    body: JSON.stringify(body)}).then(r => (postStatus = r.status, r.ok), () => (postStatus = 0, false));
 }
 let errCount = 0, lastErrAt = 0;
 function reportError(msg, stack) {
@@ -921,7 +922,8 @@ $('fbSend').addEventListener('click', async () => {
   const ok = await post('shed_feedback', {name: $('fbName').value.trim().slice(0, 24) || null, message: m.slice(0, 2000),
     meta: {games: gameCount(), ua: navigator.userAgent.slice(0, 300), w: innerWidth, h: innerHeight}});
   $('fbSend').disabled = false;
-  if (!ok) { out.classList.add('bad'); out.textContent = 'could not send — check your connection and try again.'; return; }   // text kept, so Send again just works
+  if (!ok) { out.classList.add('bad'); out.textContent = postStatus === 404   // inbox not set up yet: don't blame the player's connection
+    ? 'the feedback inbox isn’t open yet — sorry, please try again later.' : 'could not send — check your connection and try again.'; return; }   // text kept, so Send again just works
   $('fbMsg').value = ''; out.textContent = 'thanks — sent.';
   setTimeout(() => { $('fb').hidden = true; out.textContent = ''; }, 1200);
 });
