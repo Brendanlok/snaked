@@ -948,7 +948,10 @@ async function lbFetch(todayOnly) {
   try {
     const r = await fetch(REST + 'shed_scores?select=name,won,len,secs,created_at&order=won.desc,len.asc,secs.asc,created_at.asc&limit=300'
       + (todayOnly ? '&created_at=gte.' + today() + 'T00:00:00Z' : ''), {headers: {apikey: SB_KEY}});
-    return r.ok ? (await r.json()).map(s => ({...s, name: cleanName(s.name) || 'PLAYER', secs: +s.secs})) : null;
+    // The server only checks the name is 1-6 capitals/digits, so a hand-made POST can park a slur on the board
+    // and only an SQL delete removes it. Hiding it on the way in takes it off every player's screen at once.
+    return r.ok ? (await r.json()).map(s => ({...s, name: cleanName(s.name) || 'PLAYER', secs: +s.secs}))
+      .filter(s => nameAllowed(s.name)) : null;
   } catch (e) { return null; }
 }
 let boardLoadT = 0;
