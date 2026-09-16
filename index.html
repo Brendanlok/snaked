@@ -982,8 +982,9 @@ function renderBoard() {
   const warn = saveFailed ? '<div class="bwarn">Could not reach the leaderboard. This run is saved on this device.</div>' : '';
   const dayLine = boardView === 'today' ? '<div class="bday">Same apples for everyone today</div>' : '';
   // a finished run that missed the top 10 still gets told where it landed - otherwise the screen just says nothing
-  const missLine = missed ? '<div class="bmiss">Your run came <b>#' + missed + '</b> today &mdash; only the top '
-    + MAXBOARD + ' make the board.</div>' : '';
+  const missLine = !missed ? '' : '<div class="bmiss">' + (missed === 'day'
+    ? 'A new day&rsquo;s apples started while you were playing, so this run can&rsquo;t go on the board.'
+    : 'Your run came <b>#' + missed + '</b> today &mdash; only the top ' + MAXBOARD + ' make the board.') + '</div>';
   if (!list.length) {
     $('board').innerHTML = html + '<div class="empty">' + (boardLoading ? 'Loading scores&hellip;'
       : boardView === 'today' ? 'No runs on today&rsquo;s board yet &mdash; finish one to claim #1.' : 'Nobody has saved a run yet.') + '</div>' + warn + missLine + dayLine;
@@ -1016,7 +1017,9 @@ $('board').addEventListener('click', e => {
 
 // A finished run that would make today's top 10 gets the name box, judged on today's board (the daily race).
 function offerSave() {
-  if (!pending || mode !== 'over') return;
+  if (mode !== 'over') return;
+  // a run that crossed midnight UTC was played on yesterday's apples - say so, rather than leaving the screen silent
+  if (!pending) { if (apples > 0 && runDay !== today()) { missed = 'day'; renderBoard(); } return; }
   const list = (remoteToday || loadLocal().filter(onToday)).slice().sort(rankCmp);
   const r = list.filter(s => rankCmp(s, pending) <= 0).length + 1;   // ties sit below the rows already there
   if (r > MAXBOARD) { missed = r; renderBoard(); return; }
