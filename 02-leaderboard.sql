@@ -45,7 +45,15 @@ begin
   elsif new.apples > 15 or new.len <> greatest(1, 30 - 2 * new.apples) then
     raise exception 'length/apples mismatch';
   end if;
-  if new.secs < new.apples * 0.06 then raise exception 'too fast'; end if;
+  -- Real wins take ~24s and no bot run has ever finished under 10s, so these floors never refuse an honest run
+  -- (the old apples * 0.06 floor let a made-up 1-second win onto the all-time board).
+  if new.won and new.secs < 5 then raise exception 'too fast'; end if;
+  if new.secs < new.apples * 0.3 then raise exception 'too fast'; end if;
+  -- Same ban list as the game (NAME_BAN / NAME_BAN_EXACT in index.html) - keep the two in step.
+  if new.name ~ '(NIGG|N1GG|FUCK|SHIT|CUNT|FAGG|KIKE|CHINK|TRANNY|WHORE|HITLER|RETARD)'
+     or new.name ~ '^(RAPE|NAZI|FAG|SPIC|COON|GOOK|TWAT|CUM)$' then
+    raise exception 'name not allowed';
+  end if;
   select count(*) into recent from public.shed_scores
     where name = new.name and created_at > now() - interval '60 seconds';
   if recent >= 30 then raise exception 'too many scores too fast'; end if;
@@ -59,3 +67,34 @@ create trigger shed_scores_guard before insert on public.shed_scores
   for each row execute function public.shed_scores_guard();
 
 -- To remove a bad row later:  delete from public.shed_scores where name = 'XXXXXX';
+
+-- Self-test: every insert below is rolled back, so nothing ever lands on the public board.
+-- Running this file ends with 'guard self-test passed' in the messages, or an error naming the case that failed.
+do $$
+declare got text;
+  cases text[][] := array[
+    -- name,     won,     len,  apples, secs,  expect
+    ['TEST1',    'true',  '1',  '16',   '1.0', 'too fast'],
+    ['TEST2',    'true',  '1',  '16',   '4.9', 'too fast'],
+    ['TEST3',    'false', '1',  '15',   '2.0', 'too fast'],
+    ['XFUCKX',   'true',  '1',  '16',   '30',  'name not allowed'],
+    ['NAZI',     'false', '28', '1',    '9',   'name not allowed'],
+    ['NAZIS',    'false', '28', '1',    '9',   'ok'],
+    ['TEST4',    'true',  '1',  '16',   '10.0','ok'],
+    ['TEST5',    'false', '4',  '13',   '12',  'ok'],
+    ['TEST6',    'true',  '2',  '16',   '30',  'bad win']];
+begin
+  for i in 1 .. array_length(cases, 1) loop
+    begin
+      insert into public.shed_scores (name, won, len, apples, secs)
+        values (cases[i][1], cases[i][2]::boolean, cases[i][3]::int, cases[i][4]::int, cases[i][5]::numeric);
+      raise exception 'ok';                                  -- undo the row that got through
+    exception when others then got := sqlerrm;
+    end;
+    if got <> cases[i][6] then
+      raise exception 'guard self-test FAILED on %: expected %, got %', cases[i][1], cases[i][6], got;
+    end if;
+  end loop;
+  raise notice 'guard self-test passed';
+end $$;
+
