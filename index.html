@@ -159,6 +159,8 @@
     color:#6b788c;background:#101823;border:1px solid #223047;border-radius:999px;cursor:pointer;}
   #board .btab.on{color:#cfe0f5;background:#1b2636;border-color:#33455f;}
   #board .bday{color:#5f6d82;font-size:11px;text-align:center;margin-top:9px;letter-spacing:.02em;}
+  #board .bmiss{margin-top:8px;text-align:center;font-size:11.5px;color:#8b98ac;line-height:1.45;letter-spacing:.03em;}
+  #board .bmiss b{color:#c4cedd;font-weight:800;}
   /* feedback link + dialog: copied from Breakin */
   #fbLink,#setToggle{background:none;border:0;color:#6b7a90;font-size:12px;letter-spacing:.03em;
     cursor:pointer;padding:4px;margin-top:12px;text-decoration:underline;font-family:inherit;}
@@ -868,7 +870,7 @@ function showResult(won) {
   pad.classList.add('idle');
   // a run that crossed midnight UTC was played on yesterday's apples, so it never goes on today's board
   pending = runDay === today() && apples > 0 ? {won, len: snake.length, apples, secs: Math.round(elapsed * 10) / 10} : null;
-  mine = null; boardExpanded = false; $('nameEntry').hidden = true; $('board').hidden = false;
+  mine = null; missed = null; boardExpanded = false; $('nameEntry').hidden = true; $('board').hidden = false;
   refreshBoard().then(offerSave);
 }
 function hud() {
@@ -941,7 +943,7 @@ const loadLocal = () => { try { return JSON.parse(localStorage.getItem('snaked-s
 const onToday = s => String(s.created_at || '').slice(0, 10) === today();
 const shortDate = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('en-GB', {day: 'numeric', month: 'short'}); };
 let boardView = 'today', boardPicked = false, boardExpanded = false, boardLoading = false;
-let remoteAll = null, remoteToday = null, pending = null, mine = null, saveFailed = false;
+let remoteAll = null, remoteToday = null, pending = null, mine = null, saveFailed = false, missed = null;
 
 async function lbFetch(todayOnly) {
   if (!lbOn()) return null;
@@ -979,9 +981,12 @@ function renderBoard() {
     + [['today', 'Today'], ['all', 'All time']].map(([v, l]) => '<button class="btab' + (boardView === v ? ' on' : '') + '" data-v="' + v + '">' + l + '</button>').join('') + '</div>');
   const warn = saveFailed ? '<div class="bwarn">Could not reach the leaderboard. This run is saved on this device.</div>' : '';
   const dayLine = boardView === 'today' ? '<div class="bday">Same apples for everyone today</div>' : '';
+  // a finished run that missed the top 10 still gets told where it landed - otherwise the screen just says nothing
+  const missLine = missed ? '<div class="bmiss">Your run came <b>#' + missed + '</b> today &mdash; only the top '
+    + MAXBOARD + ' make the board.</div>' : '';
   if (!list.length) {
     $('board').innerHTML = html + '<div class="empty">' + (boardLoading ? 'Loading scores&hellip;'
-      : boardView === 'today' ? 'No runs on today&rsquo;s board yet &mdash; finish one to claim #1.' : 'Nobody has saved a run yet.') + '</div>' + warn + dayLine;
+      : boardView === 'today' ? 'No runs on today&rsquo;s board yet &mdash; finish one to claim #1.' : 'Nobody has saved a run yet.') + '</div>' + warn + missLine + dayLine;
     return;
   }
   const showAll = boardExpanded || list.slice(BOARD_COLLAPSED).some(s => sameRun(s, mine));   // never hide the run just saved
@@ -999,7 +1004,7 @@ function renderBoard() {
   if (list.length > BOARD_COLLAPSED) html += '<button class="bmore">' + (showAll ? 'Show less' : 'Show all ' + list.length) + '</button>';
   const players = new Set(all.map(s => s.name)).size, at = all.findIndex(s => sameRun(s, mine));
   const field = players + ' player' + (players === 1 ? '' : 's') + (remote ? (boardView === 'today' ? ' today' : ' so far') : ' on this device');
-  $('board').innerHTML = html + '<div class="brank">' + (at < 0 ? field : 'You are <b>#' + (at + 1) + '</b> &middot; ' + field) + '</div>' + warn + dayLine;
+  $('board').innerHTML = html + '<div class="brank">' + (at < 0 ? field : 'You are <b>#' + (at + 1) + '</b> &middot; ' + field) + '</div>' + warn + missLine + dayLine;
 }
 $('board').addEventListener('click', e => {
   const t = e.target.closest('.btab, .bmore');
@@ -1014,7 +1019,7 @@ function offerSave() {
   if (!pending || mode !== 'over') return;
   const list = (remoteToday || loadLocal().filter(onToday)).slice().sort(rankCmp);
   const r = list.filter(s => rankCmp(s, pending) <= 0).length + 1;   // ties sit below the rows already there
-  if (r > MAXBOARD) return;
+  if (r > MAXBOARD) { missed = r; renderBoard(); return; }
   $('neLabel').classList.remove('warn');
   $('neLabel').innerHTML = (r > 1 ? '&#9733; #' + r + ' on today&rsquo;s board' : list.length ? '&#9733; Top of today&rsquo;s board' : '&#9733; First on today&rsquo;s board') + ' &mdash; add your name';
   let n = ''; try { n = cleanName(localStorage.getItem('snaked-name')); } catch (e) {}
