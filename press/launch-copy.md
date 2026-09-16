@@ -1,6 +1,6 @@
 # Snaked — launch copy
 
-DRAFT, written 15 Sep by the scheduled session for Lok to edit. Nothing here has been posted.
+DRAFT, written 15 Sep by the scheduled session for Lok to edit (claims refreshed 16 Sep). Nothing here has been posted.
 
 Assets in this folder:
 
@@ -45,7 +45,7 @@ you're slow with an empty board but so long you can trap yourself. At the end
 you're tiny with room to turn, but more than twice as fast and threading a maze
 you built. A run is 10 to 35 seconds.
 
-Everyone gets the same apples on the same day, so times are comparable.
+Everyone gets the same apples on the same day, so times are comparable, and there's a daily and all-time leaderboard (no sign-in).
 
 https://brendanlok.itch.io/snaked
 
@@ -67,9 +67,9 @@ Description: Snaked is Snake with its one core rule turned around. You start lon
 
 What makes it tricky is that the start and the end are opposite problems. Early on you're slow and the board is empty, but you're long enough to box yourself in. Near the end you're tiny and have room to turn, but you're more than twice as fast and the board is full of your own stone. Runs take 10 to 35 seconds.
 
-Everyone gets the same apples on the same day, so your time means the same as anyone else's.
+Everyone gets the same apples on the same day, so your time means the same as anyone else's. Finish a run and put your name on today's leaderboard, no sign-in.
 
-Controls: arrow keys or WASD on desktop; on-screen arrow buttons or swipe on mobile. Free, no ads, no sign-in.
+Controls: arrow keys or WASD on desktop; on-screen arrow pad or swipe on mobile. Free, no ads, no sign-in, installable to play offline.
 
 Feedback I'd most like: does the reversal click in your first run, and are the last few apples steerable on a phone at that speed?
 
@@ -111,8 +111,13 @@ Not included. Breakin skipped HN (Lok, 13 Sep); same call for Snaked unless Lok 
 - **Feedback box:** the copy above does NOT say "comes straight to me" (Breakin's did).
   Snaked's feedback box only delivers once `01-inbox.sql` is run in Supabase. Until
   then it tells players "could not send". Run the SQL, then add the line back.
-- **Leaderboard and installable app:** Snaked has neither yet, so neither is
-  mentioned. Add them only if they ship before Friday.
+- **Leaderboard and installable app:** both shipped 15 Sep and are now mentioned
+  (refreshed 16 Sep). The leaderboard table was still empty on 16 Sep, so save one
+  real run on your phone before posting to prove it works end to end.
+- **Screenshots, GIF and cover are from 15 Sep morning, before the new phone layout**
+  (board filling the screen, d-pad over its foot, sound link on the menu). The
+  gameplay shots still read fine; `shot-0-menu.png` shows the old menu. Re-shoot
+  from your phone during Thursday's pass, or ask a session to re-render them.
 - **"Tested it on my own phone":** true only after Thursday's device pass.
 - **"More than twice as fast":** 0.16s per move at full length vs 0.06s at length 1
   is 2.7x. Correct as long as the fixed rules don't change.

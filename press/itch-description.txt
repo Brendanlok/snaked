@@ -18,10 +18,14 @@ TODAY'S APPLES
 
 Every run on the same day gets the same apples as everyone else's, so a time is a fair comparison. Tomorrow is a new board.
 
+THE LEADERBOARD
+
+Finish a run and put a name of up to 6 letters on today's board or the all-time one. Any win beats any loss; wins rank by fastest time, losses by fewest pieces left. No sign-in.
+
 CONTROLS
 
 Desktop: arrow keys or WASD. P or Esc pauses.
-Phone: the arrow buttons under the board turn the moment your thumb touches them, or swipe on the board.
+Phone: the arrow pad at the bottom of the screen turns the moment your thumb touches it, or swipe on the board. Tap the top half of the board to pause.
 There is a 3-2-1 before each run so you can get a thumb on the arrows.
 
-Free, no ads, no sign-in, no download. Works on a phone.
+Free, no ads, no sign-in, no download. Works on a phone, and you can add it to your home screen to play offline.
