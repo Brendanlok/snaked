@@ -6,6 +6,7 @@ Assets in this folder:
 
 | File | What it is |
 |---|---|
+| `snaked-itch.zip` | The game for itch's upload box: index.html, manifest, sw.js, icons, og.png, favicon (built 17 Sep from commit 298f3ac). If index.html changes before posting, rebuild it: `git -C <snaked folder> archive --format=zip -o press/snaked-itch.zip HEAD index.html manifest.json sw.js favicon.svg icon-192.png icon-512.png og.png`. |
 | `snaked-run.gif` | 27s loop, 324x568, 1.6 MB. One full winning run by the demo bot at real speed: 30 pieces down to 1, the board filling with stone, the speed-up at the end, then a title card. Lead with this, the speed-up is invisible in a still. |
 | `itch-cover.png` | 630x500 itch cover: SNAKED over a real mid-run board. |
 | `shot-0-menu.png` | Menu at phone width (2x), re-shot 16 Sep. |
@@ -99,7 +100,8 @@ Involvement: Solo project. I came up with the concept and made the design calls 
 - Genre: Action / Arcade
 - Tags: `arcade`, `snake`, `singleplayer`, `mobile-friendly`, `no-install`, `minimalist`, `fast-paced`, `short`
 - Price: Free
-- Embed: point it at `https://brendanlok.github.io/snaked/`, 420x760, fullscreen button on, mobile friendly on
+- Upload: `snaked-itch.zip`, tick "This file will be played in the browser". (itch can't embed an outside link, so the GitHub Pages address isn't used here - Breakin went up the same way with `breakin-itch.zip`.)
+- Embed options: 420x760, fullscreen button on, mobile friendly on. The itch copy uses the same shared leaderboard and feedback inbox as the test link.
 - Cover: `itch-cover.png`; screenshots: `shot-3`, `shot-2`, `shot-1`, `shot-0`; GIF first in the description if itch allows it
 
 ## Show HN
@@ -108,9 +110,8 @@ Not included. Breakin skipped HN (Lok, 13 Sep); same call for Snaked unless Lok 
 
 ## Before posting — claims to check
 
-- **Feedback box:** the copy above does NOT say "comes straight to me" (Breakin's did).
-  Snaked's feedback box only delivers once `01-inbox.sql` is run in Supabase. Until
-  then it tells players "could not send". Run the SQL, then add the line back.
+- **Feedback box:** the inbox went live 16 Sep evening (01-inbox.sql run, sends verified),
+  so a line like Breakin's "feedback comes straight to me" is now true and can go back in.
 - **Leaderboard and installable app:** both shipped 15 Sep and are now mentioned
   (refreshed 16 Sep). The leaderboard table was still empty on 16 Sep, so save one
   real run on your phone before posting to prove it works end to end.
