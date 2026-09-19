@@ -611,8 +611,8 @@ const endSwipe = () => { swipe = null; };
 document.addEventListener('pointerup', e => {
   if (swipe && !swipe.moved) {
     if (mode === 'count') skipCount();
-    // Breakin's rule: a tap on the top half of the play area pauses (the bottom half is where thumbs steer)
-    else if (mode === 'play' && e.target === canvas && e.clientY < canvas.getBoundingClientRect().top + canvas.clientHeight / 2) pause();
+    // phones only (Lok, 19 Sep): a tap on the top half pauses (the bottom half is where thumbs steer); desktop pauses with Esc only
+    else if (mode === 'play' && isTouch && e.target === canvas && e.clientY < canvas.getBoundingClientRect().top + canvas.clientHeight / 2) pause();
   }
   endSwipe();
 });
@@ -633,10 +633,10 @@ addEventListener('keydown', e => {
   if ((e.key === ' ' || e.code === 'Space') && mode === 'count') { e.preventDefault(); if (!e.repeat) skipCount(); return; }
   if (mode === 'paused' && !e.repeat) {                        // Breakin's keys: Space carries on, Esc exits to the menu
     if (e.key === 'Escape') { e.preventDefault(); confirming() ? cancelExit() : askExit(); }   // Esc asks first; Esc again keeps playing
-    else if (e.key === ' ' || e.code === 'Space' || e.key === 'Enter' || e.key === 'p' || e.key === 'P') { e.preventDefault(); resume(); }
+    else if (e.key === ' ' || e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); resume(); }
     return;
   }
-  if ((e.key === 'p' || e.key === 'P' || e.key === 'Escape') && $('fb').hidden && !e.repeat && live()) { e.preventDefault(); pause(); return; }
+  if (e.key === 'Escape' && $('fb').hidden && !e.repeat && live()) { e.preventDefault(); pause(); return; }
   if ((e.key === ' ' || e.code === 'Space' || e.key === 'Enter') && !$('overlay').hidden && $('fb').hidden && $('compete').hidden && !e.repeat) { e.preventDefault(); primary(); }
 });
 // Lok, 15 Sep: the button just says "click to start" (Space still works, it is no longer advertised).
@@ -787,7 +787,7 @@ function draw() {
   if ((mode === 'play' || (mode === 'count' && elapsed === 0)) && elapsed < 2.5) {
     ctx.fillStyle = 'rgba(159,173,193,' + Math.min(0.8, 2.5 - elapsed) + ')';
     ctx.font = '600 13px -apple-system,Segoe UI,Roboto,sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText(isTouch ? 'arrows steer · tap up here to pause' : 'arrow keys steer · click up here or P to pause', W / 2, 40);
+    ctx.fillText(isTouch ? 'arrows steer · tap up here to pause' : 'arrow keys steer · Esc to pause', W / 2, 40);
   }
   if (mode === 'count') {                                      // big 3-2-1, each number popping in and settling
     const nLeft = Math.ceil(countT), f = nLeft - countT;       // f: 0 -> 1 through each second
@@ -823,7 +823,7 @@ function skipCount() {
   countT = Math.ceil(countT - 1e-6) - 1;
   if (countT > 0) tone(440, 0.08, 'square', 0.05);
 }
-// The pause button, P / Esc, a locked phone, a notification or a switched tab all open the pause screen.
+// The pause button, Esc, a locked phone, a notification or a switched tab all open the pause screen.
 // The clock is stopped there; Resume counts 3-2-1 before play carries on.
 function pause() {
   if (!live() || versus) return;                              // a race never stops for one player

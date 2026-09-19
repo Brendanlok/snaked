@@ -24,7 +24,7 @@ Finish a run and put a name of up to 6 letters on today's board or the all-time 
 
 CONTROLS
 
-Desktop: arrow keys or WASD. P or Esc pauses.
+Desktop: arrow keys or WASD. Esc pauses.
 Phone: the arrow pad at the bottom of the screen turns the moment your thumb touches it, or swipe on the board. Tap the top half of the board to pause.
 There is a 3-2-1 before each run so you can get a thumb on the arrows.
 
