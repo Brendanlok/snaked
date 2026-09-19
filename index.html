@@ -87,8 +87,8 @@
     50%{transform:scale(1.045);box-shadow:0 14px 46px rgba(72,162,243,.62);}}
   @media (prefers-reduced-motion:reduce){#startBtn{animation:none;}}
   .how{font-size:12px!important;color:#6b7a90!important;margin-top:10px!important;}
-  /* on-screen arrows for touch: a faint d-pad cross at the foot of the screen, over the board like Breakin's move zones
-     (Lok's call, 2026-09-15). See-through so stone and snake still read underneath; only the buttons take touches. */
+  /* on-screen arrows for touch: a d-pad cross at the foot of the screen, below the board (Lok, 2026-09-19: never
+     overlapping it; fit() stops the board above it). Only the buttons take touches. */
   #pad{position:fixed;left:0;right:0;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:20;pointer-events:none;
     display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,52px);gap:6px;
     justify-content:center;touch-action:none;}
@@ -686,9 +686,10 @@ const SIDEWAYS = matchMedia('(pointer:coarse) and (orientation:landscape) and (m
 function fit() {
   if (SIDEWAYS.matches) pause();                              // turning the phone mid-run must not kill it behind the notice
   const top = parseFloat(getComputedStyle(document.getElementById('wrap')).paddingTop) || 82;
-  // As big as the screen allows, like Breakin: full width on a phone, down to the foot of the screen. The faint d-pad
-  // sits at the foot, so on tall phones it is mostly below the board and on short ones it overlaps the bottom rows.
-  const floor = innerHeight - 12 - document.getElementById('sab').offsetHeight;
+  // As big as the screen allows, like Breakin: full width on a phone, down to the d-pad. Lok, 19 Sep: the d-pad
+  // never overlaps the board, so on phones the board stops 10px above it (short phones get a smaller board).
+  const padH = isTouch ? document.getElementById('pad').offsetHeight + 10 : 0;
+  const floor = innerHeight - 12 - document.getElementById('sab').offsetHeight - padH;
   const aw = Math.min(innerWidth - (isTouch ? 0 : 16), 480), ah = floor - top;
   scale = Math.max(0.3, Math.min(aw / W, ah / H));
   dpr = Math.min(2, window.devicePixelRatio || 1);
