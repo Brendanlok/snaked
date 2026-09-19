@@ -1227,6 +1227,12 @@ async function vsTick() {
   if (vs !== v) return;
   if (!room || room.phase === 'ended') { vsGone(room ? (room[op + '_name'] || 'Your friend') + ' left the match.' : 'The match was closed.'); return; }
   v.oppName = room[op + '_name'] || v.oppName;
+  // Lok, 19 Sep: a rival who stops checking in for 15s (closed, locked, lost signal) has left: end the match for both.
+  // Timed on my own clock from when their heartbeat last changed, so the two phones' clocks never matter.
+  if (room[op + '_name']) {
+    if (room[op + '_seen'] !== v.opSeenRaw) { v.opSeenRaw = room[op + '_seen']; v.opSeenAt = Date.now(); }
+    else if (Date.now() - v.opSeenAt > 15000) { vsGone(v.oppName + ' left the match.'); return; }
+  }
   v.voteCols = 'host_again' in room;                          // false until 05-rematch.sql is run: then the host-only Rematch button stays
   v.oppAgain = !!room[op + '_again'];
   if (room.phase === 'live' && room.round > v.round) { v.round = room.round; vsBegin(room); return; }
@@ -1260,14 +1266,13 @@ function vsFinish(won) {
   vs.done = true; vs.won = won; vs.len = snake.length; vs.secs = Math.round(elapsed * 10) / 10;
   vsTick();                                                   // tell the rival now, not on the next beat
 }
-// What the room says right now, the same on both phones: 'win' | 'lose' | 'draw' | 'left' | null (still going)
+// What the room says right now, the same on both phones: 'win' | 'lose' | 'draw' | null (still going)
 function vsDecide() {
   const op = vs.opp, me = {won: vs.won, done: vs.done, len: vs.done ? vs.len : snake.length, secs: vs.secs};
   if (!op) return null;
   if (me.won && op.won) return me.secs < op.secs ? 'win' : me.secs > op.secs ? 'lose' : 'draw';
   if (me.won) return 'win';
   if (op.won) return 'lose';
-  if (!op.done && vs.lastOk - op.seen > 15000) return 'left';
   if (me.done && op.done) return me.len < op.len ? 'win' : me.len > op.len ? 'lose' : 'draw';
   if (op.done && me.len < op.len) return 'win';
   if (me.done && op.len < me.len) return 'lose';
@@ -1319,20 +1324,19 @@ function vsAfterRun() {
 }
 function vsRenderResult() {
   const res = vsDecide(), op = vs.opp, mine = vs.done ? vs.len : snake.length, t = $('cResultTitle');
-  t.className = res === 'win' || res === 'left' ? 'win' : res === 'lose' ? 'lose' : res === 'draw' ? 'tie' : '';
-  t.textContent = res === 'win' || res === 'left' ? 'You win!' : res === 'lose' ? 'You lost' : res === 'draw' ? 'Draw' : 'You’re out';
+  t.className = res === 'win' ? 'win' : res === 'lose' ? 'lose' : res === 'draw' ? 'tie' : '';
+  t.textContent = res === 'win' ? 'You win!' : res === 'lose' ? 'You lost' : res === 'draw' ? 'Draw' : 'You’re out';
   const line = (who, won, len, secs) => who + ' ' + (won ? 'finished in ' + (+secs).toFixed(1) + 's' : len + ' left');
   $('cResultScore').textContent = line('You', vs.won, mine, vs.secs) + '  ·  ' + line(op.name, op.won, op.len, op.secs);
-  const wait = $('cResultWait'), vote = vs.voteCols && res && res !== 'left', rm = $('cRematch');
+  const wait = $('cResultWait'), vote = vs.voteCols && res, rm = $('cRematch');
   // Lok, 19 Sep: a rematch needs both players to say yes within 30s, otherwise both go back to the menu
   if (vote && !vs.voteEnd) { vs.voteEnd = Date.now() + 30000; vs.voteInt = setInterval(vsVoteTick, 250); vsVoteTick(); }
   $('cRmPanel').hidden = !vote;
   wait.textContent = !res ? op.name + ' is still going with ' + op.len + ' left. They need fewer than ' + mine + ' to win.'
-    : res === 'left' ? op.name + ' left the match.'
     : vote ? (vs.oppAgain ? op.name + ' wants a rematch' : vs.again ? 'Waiting for ' + op.name + '…' : '')
     : vs.role === 'guest' ? 'Waiting for ' + op.name + ' to start a rematch…' : '';
   wait.hidden = !wait.textContent;
-  rm.hidden = !(res && res !== 'left' && (vote || vs.role === 'host'));
+  rm.hidden = !(res && (vote || vs.role === 'host'));
   rm.textContent = vote ? (vs.again ? 'Ready' : 'Play again') : 'Rematch';
   rm.disabled = vote && !!vs.again;
 }
@@ -1348,15 +1352,9 @@ function vsRematch() {
   if (!vs.voteCols) { vsStart(); return; }
   vs.again = true; vsRenderResult(); vsTick();
 }
-function vsGone(msg) {
-  if (vs && vs.voteEnd) { vsLeave(); toast(msg); return; }  // they declined or timed out during the vote
-  const running = mode === 'play' || mode === 'count';
-  vsStop();
-  if (running) mode = 'vsover';
-  pad.classList.add('idle');
-  showView('result');
-  $('cResultTitle').className = ''; $('cResultTitle').textContent = 'Match over';
-  $('cResultScore').textContent = msg; $('cResultWait').hidden = true; $('cRematch').hidden = true;
+function vsGone(msg) {   // Lok, 19 Sep: when the rival has gone, disconnect and end it: back to the menu for good
+  const voting = vs && vs.voteEnd;
+  vsLeave(); toast(voting ? 'No rematch — back to the menu' : msg);
 }
 
 $('competeBtn').addEventListener('click', () => openCompete('choice'));
