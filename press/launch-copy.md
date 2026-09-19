@@ -6,7 +6,7 @@ Assets in this folder:
 
 | File | What it is |
 |---|---|
-| `snaked-itch.zip` | The game for itch's upload box: index.html, manifest, sw.js, icons, og.png, favicon (built 17 Sep from commit 298f3ac). If index.html changes before posting, rebuild it: `git -C <snaked folder> archive --format=zip -o press/snaked-itch.zip HEAD index.html manifest.json sw.js favicon.svg icon-192.png icon-512.png og.png`. |
+| `snaked-itch.zip` | The game for itch's upload box: index.html, manifest, sw.js, icons, og.png, favicon (rebuilt 19 Sep from commit 5a36cb8: Esc-only pause on desktop, d-pad below the board on phones). If index.html changes before posting, rebuild it: `git -C <snaked folder> archive --format=zip -o press/snaked-itch.zip HEAD index.html manifest.json sw.js favicon.svg icon-192.png icon-512.png og.png`. |
 | `snaked-run.gif` | 27s loop, 324x568, 1.6 MB. One full winning run by the demo bot at real speed: 30 pieces down to 1, the board filling with stone, the speed-up at the end, then a title card. Lead with this, the speed-up is invisible in a still. |
 | `itch-cover.png` | 630x500 itch cover: SNAKED over a real mid-run board. |
 | `shot-0-menu.png` | Menu at phone width (2x), re-shot 16 Sep. |
@@ -116,8 +116,8 @@ Not included. Breakin skipped HN (Lok, 13 Sep); same call for Snaked unless Lok 
   (refreshed 16 Sep). The leaderboard table was still empty on 16 Sep, so save one
   real run on your phone before posting to prove it works end to end.
 - **Screenshots, GIF and cover are from 15 Sep morning, before the new phone layout**
-  (board filling the screen, d-pad over its foot, sound link on the menu). The
-  gameplay shots still read fine. `shot-0-menu.png` was re-shot from the live link
+  (board filling the screen, sound link on the menu; since 19 Sep the d-pad sits below
+  the board, never over it). The gameplay shots crop to the board, so they still read fine. `shot-0-menu.png` was re-shot from the live link
   on 16 Sep (sound link, "tap to start", leaderboard panel), but the board in it is
   empty - re-shoot it once a few real runs are on today's board.
 - **"Tested it on my own phone":** true only after Thursday's device pass.
