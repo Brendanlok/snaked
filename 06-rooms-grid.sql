@@ -8,6 +8,7 @@ alter table public.shed_rooms add column if not exists host_grid  text;
 alter table public.shed_rooms add column if not exists guest_grid text;
 
 alter table public.shed_rooms drop constraint if exists shed_rooms_grid;
+-- (Postgres regexes cap a repeat count at 255, so the length is checked separately - fixed 19 Sep; safe to re-run)
 alter table public.shed_rooms add constraint shed_rooms_grid check (
-  (host_grid  is null or host_grid  ~ '^[.sxbha]{360}$') and
-  (guest_grid is null or guest_grid ~ '^[.sxbha]{360}$'));
+  (host_grid  is null or (char_length(host_grid)  = 360 and host_grid  ~ '^[.sxbha]+$')) and
+  (guest_grid is null or (char_length(guest_grid) = 360 and guest_grid ~ '^[.sxbha]+$')));

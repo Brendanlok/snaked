@@ -1246,11 +1246,14 @@ async function vsTick() {
     const body = {[me + '_seen']: new Date().toISOString()};
     if (v.round > 0) Object.assign(body, {[me + '_len']: v.done ? v.len : snake.length, [me + '_done']: !!v.done, [me + '_won']: !!v.won,
       [me + '_secs']: v.done ? v.secs : Math.round(elapsed * 10) / 10}, v.voteCols ? {[me + '_again']: !!v.again} : {},
-      v.gridCols ? {[me + '_grid']: encGrid()} : {});
+      v.gridCols && !v.gridBad ? {[me + '_grid']: encGrid()} : {});
     const rows = await roomReq('PATCH', '?code=eq.' + v.code + '&round=eq.' + v.round, body, 'return=representation');
     room = rows[0] || (await roomReq('GET', '?code=eq.' + v.code))[0] || null;
     v.lastOk = Date.now();
-  } catch (e) { return; } finally { v.busy = false; }
+  } catch (e) {                                               // a board the database refuses must never stall the race: drop the boards
+    if (v.gridCols && !v.gridBad && /rooms 400/.test(e.message)) v.gridBad = true;
+    return;
+  } finally { v.busy = false; }
   if (vs !== v) return;
   if (!room || room.phase === 'ended') { vsGone(room ? (room[op + '_name'] || 'Your friend') + ' left the match.' : 'The match was closed.'); return; }
   v.oppName = room[op + '_name'] || v.oppName;
@@ -1358,8 +1361,8 @@ function vsRenderResult() {
   const line = (who, won, len, secs) => who + ' ' + (won ? 'finished in ' + (+secs).toFixed(1) + 's' : len + ' left');
   $('cResultScore').textContent = line('You', vs.won, mine, vs.secs) + '  ·  ' + line(op.name, op.won, op.len, op.secs);
   // Breakin's: both boards side by side; theirs redraws every poll, so it fills in live while you wait
-  $('cArenas').hidden = !vs.gridCols;
-  if (vs.gridCols) {
+  $('cArenas').hidden = !vs.gridCols || !!vs.gridBad;
+  if (!$('cArenas').hidden) {
     drawMini($('cMineC'), encGrid()); drawMini($('cOppC'), vs.oppGrid);
     const tag = (won, len, secs) => won ? (+secs).toFixed(1) + 's' : len + ' left';
     $('cMineLbl').textContent = 'You · ' + tag(vs.won, mine, vs.secs);
