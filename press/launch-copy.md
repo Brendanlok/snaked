@@ -6,7 +6,7 @@ Assets in this folder:
 
 | File | What it is |
 |---|---|
-| `snaked-itch.zip` | The game for itch's upload box: index.html, manifest, sw.js, icons, og.png, favicon (rebuilt 19 Sep from commit 69a4664: Esc-only pause, d-pad below the board, race with Breakin's screens, You win/You lost, 30s two-player rematch vote, leaving ends the match, 5s countdown before leaving a finished match, both boards on the race result, race runs until both are out, times on the race result). If index.html changes before posting, rebuild it: `git -C <snaked folder> archive --format=zip -o press/snaked-itch.zip HEAD index.html manifest.json sw.js favicon.svg icon-192.png icon-512.png og.png`. |
+| `snaked-itch.zip` | The game for itch's upload box: index.html, manifest, sw.js, icons, og.png, favicon (rebuilt 19 Sep from commit a3fb0dd: Esc-only pause, d-pad below the board, race with Breakin's screens, You win/You lost, 30s two-player rematch vote, leaving ends the match, 5s countdown before leaving a finished match, both boards on the race result, race runs until both are out, times on the race result, rival apples left + time in the race HUD). If index.html changes before posting, rebuild it: `git -C <snaked folder> archive --format=zip -o press/snaked-itch.zip HEAD index.html manifest.json sw.js favicon.svg icon-192.png icon-512.png og.png`. |
 | `snaked-run.gif` | 27s loop, 324x568, 1.6 MB. One full winning run by the demo bot at real speed: 30 pieces down to 1, the board filling with stone, the speed-up at the end, then a title card. Lead with this, the speed-up is invisible in a still. |
 | `itch-cover.png` | 630x500 itch cover: SNAKED over a real mid-run board. |
 | `shot-0-menu.png` | Menu at phone width (2x), re-shot 16 Sep. |
