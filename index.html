@@ -1064,14 +1064,12 @@ function offerSave() {
   if (r > MAXBOARD) { missed = r; renderBoard(); return; }
   $('neLabel').classList.remove('warn');
   $('neLabel').innerHTML = (r > 1 ? '&#9733; #' + r + ' on today&rsquo;s board' : list.length ? '&#9733; Top of today&rsquo;s board' : '&#9733; First on today&rsquo;s board') + ' &mdash; add your name';
-  let n = ''; try { n = cleanName(localStorage.getItem('snaked-name')); } catch (e) {}
-  $('nameInput').value = n; $('saveBtn').disabled = !n; $('nameEntry').hidden = false;
+  $('nameInput').value = ''; $('saveBtn').disabled = true; $('nameEntry').hidden = false;   // never pre-typed (Lok, 19 Sep): everyone types a name, placeholder only
 }
 async function saveRun() {
   const name = cleanName($('nameInput').value);
   if (!pending || !name) return;
   if (!nameAllowed(name)) { $('neLabel').textContent = 'Pick a different name — that one is not allowed.'; $('neLabel').classList.add('warn'); return; }
-  try { localStorage.setItem('snaked-name', name); } catch (e) {}
   const run = {name, ...pending, created_at: new Date().toISOString()};
   pending = null; mine = run; $('nameEntry').hidden = true; $('nameInput').blur();
   try { localStorage.setItem('snaked-scores', JSON.stringify(loadLocal().concat(run).sort(rankCmp).slice(0, 50))); } catch (e) {}
@@ -1171,8 +1169,7 @@ function showView(v) {
   $('compete').hidden = false;
 }
 function openCompete(view) {
-  let n = ''; try { n = cleanName(localStorage.getItem('snaked-name')); } catch (e) {}
-  $('cName').value = n; $('cName').placeholder = 'Your name (or ' + vsSuggest + ')';
+  $('cName').value = ''; $('cName').placeholder = 'Your name (or ' + vsSuggest + ')';
   $('cChoiceErr').textContent = $('cJoinErr').textContent = $('cJoinStatus').textContent = '';
   $('cJoinGo').hidden = false;
   showView(view);
@@ -1180,7 +1177,6 @@ function openCompete(view) {
 function vsName(errEl) {
   const n = cleanName($('cName').value) || vsSuggest;
   if (!nameAllowed(n)) { errEl.textContent = 'Pick a different name — that one is not allowed.'; return ''; }
-  try { localStorage.setItem('snaked-name', n); } catch (e) {}
   return n;
 }
 function vsPoll() { clearInterval(vsTimer); vsTimer = setInterval(vsTick, 1000); }
