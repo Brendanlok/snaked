@@ -233,7 +233,7 @@
   #compete #cArenas{display:flex;gap:18px;justify-content:center;margin:2px 0;}   /* Breakin's result boards */
   #compete .carena{display:flex;flex-direction:column;align-items:center;gap:5px;}
   #compete .carena canvas{background:#0d1420;border:1px solid #2b3a52;border-radius:4px;}
-  #compete .carena span{font-size:11px;letter-spacing:.02em;color:#8ba0bd;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #compete .carena span{font-size:11px;line-height:1.4;letter-spacing:.02em;color:#8ba0bd;max-width:96px;text-align:center;white-space:pre-line;}
   #compete .carena.win canvas{border-color:#8fd6a0;}
   #compete .carena.win span{color:#8fd6a0;}
   #cRmPanel{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;}   /* Breakin's rematch timer */
@@ -1357,15 +1357,17 @@ function vsRenderResult() {
   const res = vsDecide(), op = vs.opp, mine = vs.done ? vs.len : snake.length, t = $('cResultTitle');
   t.className = res === 'win' ? 'win' : res === 'lose' ? 'lose' : res === 'draw' ? 'tie' : '';
   t.textContent = res === 'win' ? 'You win!' : res === 'lose' ? 'You lost' : res === 'draw' ? 'Draw' : 'You’re out';
-  const line = (who, won, len, secs) => who + ' ' + (won ? 'finished in ' + (+secs).toFixed(1) + 's' : len + ' left');
-  $('cResultScore').textContent = line('You', vs.won, mine, vs.secs) + '  ·  ' + line(op.name, op.won, op.len, op.secs);
+  // Lok, 19 Sep: every player's time is on the result screen (a rival still playing has no final time yet)
+  const time = (won, done, secs) => won || done ? (+secs).toFixed(1) + 's' : 'still going';
+  const line = (who, won, done, len, secs) => who + ': ' + (won ? 'finished in ' + time(won, done, secs) : len + ' left' + (done ? ' in ' + time(won, done, secs) : ', still going'));
+  $('cResultScore').textContent = line('You', vs.won, vs.done, mine, vs.secs) + '  ·  ' + line(op.name, op.won, op.done, op.len, op.secs);
   // Breakin's: both boards side by side; theirs redraws every poll, so it fills in live while you wait
   $('cArenas').hidden = !vs.gridCols || !!vs.gridBad;
   if (!$('cArenas').hidden) {
     drawMini($('cMineC'), encGrid()); drawMini($('cOppC'), vs.oppGrid);
-    const tag = (won, len, secs) => won ? (+secs).toFixed(1) + 's' : len + ' left';
-    $('cMineLbl').textContent = 'You · ' + tag(vs.won, mine, vs.secs);
-    $('cOppLbl').textContent = op.name + ' · ' + tag(op.won, op.len, op.secs);
+    const tag = (won, done, len, secs) => (won ? 'finished' : len + ' left') + '\n' + time(won, done, secs);
+    $('cMineLbl').textContent = 'You · ' + tag(vs.won, vs.done, mine, vs.secs);
+    $('cOppLbl').textContent = op.name + ' · ' + tag(op.won, op.done, op.len, op.secs);
     $('cMineA').classList.toggle('win', res === 'win'); $('cOppA').classList.toggle('win', res === 'lose');
   }
   const wait = $('cResultWait'), vote = vs.voteCols && res, rm = $('cRematch');
