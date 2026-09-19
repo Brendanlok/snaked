@@ -322,7 +322,7 @@
       <div id="cResultScore"></div>
       <div id="cRmPanel" hidden>
         <div id="cRmBar"><div id="cRmFill"></div></div>
-        <div class="csub" style="margin:0">Play again? <b id="cRmSecs">30</b>s</div>
+        <div id="cRmText" class="csub" style="margin:0"></div>
       </div>
       <div id="cResultWait" class="cnote" hidden></div>
       <button id="cRematch" hidden>Rematch</button>
@@ -1102,7 +1102,7 @@ const CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';               // no I L O 0 
 const makeCode = () => Array.from({length: 6}, () => CODE_ABC[(Math.random() * CODE_ABC.length) | 0]).join('');
 const NAME_WORDS = ['BRISK', 'CALM', 'ODD', 'NEON', 'LUCKY', 'SLY', 'BOLD', 'TINY', 'VAST', 'ZESTY', 'SHARP', 'OTTER', 'COMET', 'FOX', 'MOTH', 'RAVEN', 'TIGER', 'HAWK', 'LYNX', 'CRANE', 'MOLE', 'WASP', 'KOI', 'YAK'];
 const vsSuggest = NAME_WORDS[(Math.random() * NAME_WORDS.length) | 0] + ((Math.random() * 10) | 0);
-let vs = null, vsTimer = 0, vsMsgT = 0;
+let vs = null, vsTimer = 0, vsMsgT = 0, goneInt = 0;
 
 async function roomReq(method, q, body, prefer) {
   const r = await fetch(ROOMS + q, {method, headers: Object.assign({apikey: SB_KEY, 'Content-Type': 'application/json'}, prefer ? {Prefer: prefer} : {}),
@@ -1153,7 +1153,7 @@ function vsPoll() { clearInterval(vsTimer); vsTimer = setInterval(vsTick, 1000);
 function vsStop() { clearInterval(vsTimer); if (vs) clearInterval(vs.voteInt); vs = null; versus = false; }
 const endRoom = code => fetch(ROOMS + '?code=eq.' + code, {method: 'PATCH', keepalive: true,
   headers: {apikey: SB_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal'}, body: JSON.stringify({phase: 'ended'})}).catch(() => {});
-function vsLeave() { if (vs) endRoom(vs.code); vsStop(); toMenu(); }
+function vsLeave() { clearInterval(goneInt); if (vs) endRoom(vs.code); vsStop(); toMenu(); }
 addEventListener('pagehide', () => { if (vs) endRoom(vs.code); });
 
 async function vsInvite() {
@@ -1343,7 +1343,7 @@ function vsRenderResult() {
 function vsVoteTick() {
   if (!vs || !vs.voteEnd) return;
   const left = vs.voteEnd - Date.now();
-  $('cRmSecs').textContent = Math.max(0, Math.ceil(left / 1000));
+  $('cRmText').textContent = 'Play again? Back to menu in ' + Math.max(0, Math.ceil(left / 1000)) + 's';
   $('cRmFill').style.width = Math.max(0, Math.min(100, left / 300)) + '%';
   if (left <= 0) { vsLeave(); toast('No rematch — back to the menu'); }
 }
@@ -1352,9 +1352,22 @@ function vsRematch() {
   if (!vs.voteCols) { vsStart(); return; }
   vs.again = true; vsRenderResult(); vsTick();
 }
-function vsGone(msg) {   // Lok, 19 Sep: when the rival has gone, disconnect and end it: back to the menu for good
-  const voting = vs && vs.voteEnd;
-  vsLeave(); toast(voting ? 'No rematch — back to the menu' : msg);
+function vsGone(msg) {   // Lok, 19 Sep: the rival has gone, so disconnect and end it - with a 5s countdown on the result screen first
+  const voting = vs && vs.voteEnd, end = Date.now() + 5000;
+  if (vs) endRoom(vs.code);
+  vsStop();
+  if (mode === 'play' || mode === 'count') mode = 'vsover';
+  pad.classList.add('idle'); showView('result');
+  $('cResultTitle').className = ''; $('cResultTitle').textContent = 'Match over';
+  $('cResultScore').textContent = voting ? 'No rematch.' : msg;
+  $('cResultWait').hidden = $('cRematch').hidden = true; $('cRmPanel').hidden = false;
+  const tick = () => {
+    const left = end - Date.now();
+    $('cRmText').textContent = 'Back to menu in ' + Math.max(0, Math.ceil(left / 1000)) + 's';
+    $('cRmFill').style.width = Math.max(0, left / 50) + '%';
+    if (left <= 0) vsLeave();
+  };
+  clearInterval(goneInt); goneInt = setInterval(tick, 250); tick();
 }
 
 $('competeBtn').addEventListener('click', () => openCompete('choice'));
