@@ -1101,7 +1101,7 @@ $('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.pre
 
 // ---- competitive: race + attacks (shed_rooms from 03-rooms.sql) ---------------------------------------------------
 // Two players, same apples, own boards. Everything your rival sheds lands on your board as red stone.
-// First to finish wins. If one player is out, the other wins the moment they have fewer pieces left; both out = fewer pieces wins.
+// First to finish wins. Otherwise the race runs until both are out (Lok, 19 Sep: passing a player who is out doesn't end it) - fewer pieces wins.
 // Sync is Breakin's: plain REST, one request a second per phone, no websocket.
 // Lok, 19 Sep: the menu button is visible to everyone (was hidden behind ?vs=1 until tested).
 const VS_Q = new URLSearchParams(location.search);
@@ -1282,7 +1282,7 @@ async function vsTick() {
 }
 function vsBegin(room) {
   clearInterval(vs.voteInt);
-  Object.assign(vs, {seed: +room.seed, done: false, won: false, len: START_LEN, secs: 0, dropped: 0, resultShown: false, again: false, oppAgain: false, voteEnd: 0, oppGrid: '',
+  Object.assign(vs, {seed: +room.seed, done: false, won: false, len: START_LEN, secs: 0, dropped: 0, resultShown: false, aheadSaid: false, again: false, oppAgain: false, voteEnd: 0, oppGrid: '',
     opp: {name: vs.oppName || 'Rival', len: START_LEN, done: false, won: false, secs: 0, seen: Date.now()}});
   versus = true;
   $('compete').hidden = true; $('overlay').hidden = true; $('pause').hidden = true;
@@ -1306,8 +1306,6 @@ function vsDecide() {
   if (me.won) return 'win';
   if (op.won) return 'lose';
   if (me.done && op.done) return me.len < op.len ? 'win' : me.len > op.len ? 'lose' : 'draw';
-  if (op.done && me.len < op.len) return 'win';
-  if (me.done && op.len < me.len) return 'lose';
   return null;
 }
 function vsUpdate(prevDone) {
@@ -1316,7 +1314,8 @@ function vsUpdate(prevDone) {
     const target = Math.max(0, Math.min(START_LEN - 1, START_LEN - op.len));   // every piece they've shed lands on you
     if (target > vs.dropped && !vs.dropped) toast(op.name + '’s shed is landing on your board');
     while (vs.dropped < target) { dropStone(); vs.dropped++; }
-    if (op.done && !prevDone && !op.won) toast(op.name + ' is out with ' + op.len + ' left — get below ' + op.len + ' to win');
+    if (op.done && !prevDone && !op.won) toast(op.name + ' is out with ' + op.len + ' left — finish with fewer to win');
+    if (op.done && !op.won && snake.length < op.len && !vs.aheadSaid) { vs.aheadSaid = true; toast('You’re ahead of ' + op.name + ' — keep going'); }
   }
   const res = vsDecide();
   if (res && running) {                                       // decided while I'm still going: my board stops where it is
@@ -1373,7 +1372,8 @@ function vsRenderResult() {
   // Lok, 19 Sep: a rematch needs both players to say yes within 30s, otherwise both go back to the menu
   if (vote && !vs.voteEnd) { vs.voteEnd = Date.now() + 30000; vs.voteInt = setInterval(vsVoteTick, 250); vsVoteTick(); }
   $('cRmPanel').hidden = !vote;
-  wait.textContent = !res ? op.name + ' is still going with ' + op.len + ' left. They need fewer than ' + mine + ' to win.'
+  wait.textContent = !res ? (op.len < mine ? op.name + ' is ahead with ' + op.len + ' left and still going…'
+      : op.name + ' is still going with ' + op.len + ' left. They need fewer than ' + mine + ' to win.')
     : vote ? (vs.oppAgain ? op.name + ' wants a rematch' : vs.again ? 'Waiting for ' + op.name + '…' : '')
     : vs.role === 'guest' ? 'Waiting for ' + op.name + ' to start a rematch…' : '';
   wait.hidden = !wait.textContent;
