@@ -28,7 +28,7 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     touch-action:none;-webkit-user-select:none;user-select:none;}
   #wrap{position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;
-    padding-top:calc(82px + env(safe-area-inset-top,0px));}
+    padding-top:calc(76px + env(safe-area-inset-top,0px));}
   canvas{background:#0d1420;display:block;touch-action:none;
     box-shadow:0 0 80px rgba(80,140,255,.18);border-radius:4px;}
   #hud{position:fixed;top:calc(9px + env(safe-area-inset-top,0px));left:0;right:0;display:flex;
@@ -91,7 +91,7 @@
      overlapping it; fit() stops the board above it). Only the buttons take touches. */
   #pad{position:fixed;left:0;right:0;margin:0 auto;max-width:480px;box-sizing:border-box;padding:0 12px;
     bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:20;pointer-events:none;
-    display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,52px);gap:6px;touch-action:none;}
+    display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,44px);gap:4px;touch-action:none;}
   #pad .hub{grid-column:2;grid-row:2;background:rgba(120,160,220,.03);border-radius:14px;}
   #pad.idle{visibility:hidden;}
   #pad button{display:flex;align-items:center;justify-content:center;padding:0;pointer-events:auto;
@@ -683,18 +683,18 @@ function step(dt) {
 const canvas = document.getElementById('cv'), ctx = canvas.getContext('2d');
 let scale = 1, dpr = 1;
 const SIDEWAYS = matchMedia('(pointer:coarse) and (orientation:landscape) and (max-height:520px)');   // same query as #rotate's CSS
-const PAD_H = 3 * 52 + 2 * 6;   // the d-pad's smallest height (#pad rows + gaps); it grows into any room left under the board
+const PAD_H = 3 * 44 + 2 * 4;   // the d-pad's smallest height (#pad rows + gaps); it grows into any room left under the board
 function fit() {
   if (SIDEWAYS.matches) pause();                              // turning the phone mid-run must not kill it behind the notice
-  const top = parseFloat(getComputedStyle(document.getElementById('wrap')).paddingTop) || 82;
+  const top = parseFloat(getComputedStyle(document.getElementById('wrap')).paddingTop) || 76;
   // As big as the screen allows, like Breakin: full width on a phone, down to the d-pad. Lok, 19 Sep: the d-pad
-  // never overlaps the board, so on phones the board stops 10px above it (short phones get a smaller board).
-  const padH = isTouch ? PAD_H + 10 : 0;
+  // never overlaps the board, so on phones the board stops 6px above it (short phones get a smaller board).
+  const padH = isTouch ? PAD_H + 6 : 0;
   const floor = innerHeight - 12 - document.getElementById('sab').offsetHeight - padH;
   const aw = Math.min(innerWidth - (isTouch ? 0 : 16), 480), ah = floor - top;
   scale = Math.max(0.3, Math.min(aw / W, ah / H));
   // Lok, 19 Sep: the d-pad fills the whole space under the board, so when the board is capped by width it grows taller
-  if (isTouch) document.getElementById('pad').style.gridTemplateRows = 'repeat(3,' + (PAD_H - 12 + Math.max(0, ah - H * scale)) / 3 + 'px)';
+  if (isTouch) document.getElementById('pad').style.gridTemplateRows = 'repeat(3,' + (PAD_H - 8 + Math.max(0, ah - H * scale)) / 3 + 'px)';
   dpr = Math.min(2, window.devicePixelRatio || 1);
   canvas.style.width = W * scale + 'px'; canvas.style.height = H * scale + 'px';
   canvas.width = Math.round(W * scale * dpr); canvas.height = Math.round(H * scale * dpr);
