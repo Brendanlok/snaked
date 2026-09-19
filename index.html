@@ -341,7 +341,7 @@
     </div>
   </div>
   <button id="startBtn"><span class="lbl" id="startLbl">Play</span><span class="sub" id="startSub">click to start</span></button>
-  <button id="competeBtn" hidden>Play competitive</button>
+  <button id="competeBtn">Play competitive</button>
   <p class="how touch-only">steer with the arrow buttons, or swipe</p>
   <div id="board"></div>
   <button id="fbLink">Send feedback</button></div>
@@ -1079,14 +1079,10 @@ $('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.pre
 // Two players, same apples, own boards. Everything your rival sheds lands on your board as red stone.
 // First to finish wins. If one player is out, the other wins the moment they have fewer pieces left; both out = fewer pieces wins.
 // Sync is Breakin's: plain REST, one request a second per phone, no websocket.
-// Hidden until tested (Lok's call): the menu button only shows after ?vs=1 once, or on a ?join= invite link.
+// Lok, 19 Sep: the menu button is visible to everyone (was hidden behind ?vs=1 until tested).
 const VS_Q = new URLSearchParams(location.search);
 const cleanCode = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
 const JOIN = cleanCode(VS_Q.get('join'));
-const VS_ON = (() => {
-  try { if (VS_Q.has('vs')) localStorage.setItem('snaked-vs', '1'); return VS_Q.has('vs') || !!JOIN || localStorage.getItem('snaked-vs') === '1'; }
-  catch (e) { return VS_Q.has('vs') || !!JOIN; }
-})();
 const ROOMS = REST + 'shed_rooms', ATTACK = 65535;              // stones[] value marking a stone your rival sent you
 const CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';               // no I L O 0 1: unambiguous read aloud or typed
 const makeCode = () => Array.from({length: 6}, () => CODE_ABC[(Math.random() * CODE_ABC.length) | 0]).join('');
@@ -1333,7 +1329,6 @@ $('cCopy').addEventListener('click', async () => {
 
 // ---- loop ----------------------------------------------------------------------------
 runKind = 'attract'; newRun(); mode = 'attract'; fit(); keyHint(); refreshBoard();
-$('competeBtn').hidden = !VS_ON;
 if (JOIN) { openCompete('join'); $('cCodeIn').value = JOIN; }   // someone opened a friend's invite link
 addEventListener('resize', fit);
 let last = 0;

@@ -22,6 +22,10 @@ THE LEADERBOARD
 
 Finish a run and put a name of up to 6 letters on today's board or the all-time one. Any win beats any loss; wins rank by fastest time, losses by fewest pieces left. No sign-in.
 
+RACE A FRIEND
+
+Tap Play competitive, send the invite link, and race on the same apples. Every piece you shed lands on your rival's board as stone. First to shed it all wins.
+
 CONTROLS
 
 Desktop: arrow keys or WASD. Esc pauses.
