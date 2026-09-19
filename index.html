@@ -230,6 +230,9 @@
   #compete #cResultTitle.lose{color:#ff9d8a;}
   #compete #cResultTitle.tie{color:#ffd25f;}
   #compete #cResultScore{font-size:14px;color:#c4cedd;font-variant-numeric:tabular-nums;margin-top:-4px;}
+  #cRmPanel{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;}   /* Breakin's rematch timer */
+  #cRmBar{width:100%;height:4px;border-radius:2px;background:#1b2637;overflow:hidden;}
+  #cRmFill{height:100%;width:100%;background:linear-gradient(90deg,#84c4ff,#48a2f3);}
   #compete button[disabled]{opacity:.4;pointer-events:none;}
   #hud .st-opp b{color:#8fd6a0;}
   #hud .st-opp i{max-width:74px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#7f8ca0;}
@@ -317,6 +320,10 @@
     <div id="cResultV" class="cview" hidden>
       <div id="cResultTitle"></div>
       <div id="cResultScore"></div>
+      <div id="cRmPanel" hidden>
+        <div id="cRmBar"><div id="cRmFill"></div></div>
+        <div class="csub" style="margin:0">Play again? <b id="cRmSecs">30</b>s</div>
+      </div>
       <div id="cResultWait" class="cnote" hidden></div>
       <button id="cRematch" hidden>Rematch</button>
       <button id="cResultExit" class="ghost">Exit to menu</button>
@@ -1143,7 +1150,7 @@ function vsName(errEl) {
   return n;
 }
 function vsPoll() { clearInterval(vsTimer); vsTimer = setInterval(vsTick, 1000); }
-function vsStop() { clearInterval(vsTimer); vs = null; versus = false; }
+function vsStop() { clearInterval(vsTimer); if (vs) clearInterval(vs.voteInt); vs = null; versus = false; }
 const endRoom = code => fetch(ROOMS + '?code=eq.' + code, {method: 'PATCH', keepalive: true,
   headers: {apikey: SB_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal'}, body: JSON.stringify({phase: 'ended'})}).catch(() => {});
 function vsLeave() { if (vs) endRoom(vs.code); vsStop(); toMenu(); }
@@ -1192,6 +1199,7 @@ async function vsStart() {
   if (!vs || vs.role !== 'host') return;
   const round = vs.round + 1, room = {phase: 'live', round, seed: (Math.random() * 2147483647) | 0, start_at: new Date(Date.now() + 3500).toISOString(),
     host_len: 30, host_done: false, host_won: false, host_secs: 0, guest_len: 30, guest_done: false, guest_won: false, guest_secs: 0};
+  if (vs.voteCols) Object.assign(room, {host_again: false, guest_again: false});
   $('cStart').disabled = $('cRematch').disabled = true;
   try { await roomReq('PATCH', '?code=eq.' + vs.code, room, 'return=minimal'); }
   catch (e) { $('cInviteStatus').textContent = 'Could not start. Try again.'; return; }
@@ -1211,7 +1219,7 @@ async function vsTick() {
   try {
     const body = {[me + '_seen']: new Date().toISOString()};
     if (v.round > 0) Object.assign(body, {[me + '_len']: v.done ? v.len : snake.length, [me + '_done']: !!v.done, [me + '_won']: !!v.won,
-      [me + '_secs']: v.done ? v.secs : Math.round(elapsed * 10) / 10});
+      [me + '_secs']: v.done ? v.secs : Math.round(elapsed * 10) / 10}, v.voteCols ? {[me + '_again']: !!v.again} : {});
     const rows = await roomReq('PATCH', '?code=eq.' + v.code + '&round=eq.' + v.round, body, 'return=representation');
     room = rows[0] || (await roomReq('GET', '?code=eq.' + v.code))[0] || null;
     v.lastOk = Date.now();
@@ -1219,12 +1227,15 @@ async function vsTick() {
   if (vs !== v) return;
   if (!room || room.phase === 'ended') { vsGone(room ? (room[op + '_name'] || 'Your friend') + ' left the match.' : 'The match was closed.'); return; }
   v.oppName = room[op + '_name'] || v.oppName;
+  v.voteCols = 'host_again' in room;                          // false until 05-rematch.sql is run: then the host-only Rematch button stays
+  v.oppAgain = !!room[op + '_again'];
   if (room.phase === 'live' && room.round > v.round) { v.round = room.round; vsBegin(room); return; }
   if (v.round > 0 && room.round === v.round) {
     const prevDone = v.opp && v.opp.done;
     v.opp = {name: v.oppName || 'Rival', len: room[op + '_len'], done: room[op + '_done'], won: room[op + '_won'], secs: +room[op + '_secs'],
       seen: Date.parse(room[op + '_seen'] || '') || Date.now()};
     vsUpdate(prevDone);
+    if (me === 'host' && v.voteEnd && v.again && v.oppAgain) { clearInterval(v.voteInt); v.voteEnd = 0; vsStart(); }   // both said yes
   } else if (me === 'host') {
     $('cInviteStatus').textContent = room.guest_name ? room.guest_name + ' joined. Ready when you are.' : 'Waiting for someone to join…';
     $('cInviteShare').hidden = !!room.guest_name;                // Breakin's: the code and QR go once someone is in
@@ -1232,7 +1243,8 @@ async function vsTick() {
   }
 }
 function vsBegin(room) {
-  Object.assign(vs, {seed: +room.seed, done: false, won: false, len: START_LEN, secs: 0, dropped: 0, resultShown: false,
+  clearInterval(vs.voteInt);
+  Object.assign(vs, {seed: +room.seed, done: false, won: false, len: START_LEN, secs: 0, dropped: 0, resultShown: false, again: false, oppAgain: false, voteEnd: 0,
     opp: {name: vs.oppName || 'Rival', len: START_LEN, done: false, won: false, secs: 0, seen: Date.now()}});
   versus = true;
   $('compete').hidden = true; $('overlay').hidden = true; $('pause').hidden = true;
@@ -1308,16 +1320,36 @@ function vsAfterRun() {
 function vsRenderResult() {
   const res = vsDecide(), op = vs.opp, mine = vs.done ? vs.len : snake.length, t = $('cResultTitle');
   t.className = res === 'win' || res === 'left' ? 'win' : res === 'lose' ? 'lose' : res === 'draw' ? 'tie' : '';
-  t.textContent = res === 'win' ? 'You win!' : res === 'left' ? op.name + ' left — you win' : res === 'lose' ? op.name + ' wins' : res === 'draw' ? 'Draw' : 'You’re out';
+  t.textContent = res === 'win' || res === 'left' ? 'You win!' : res === 'lose' ? 'You lost' : res === 'draw' ? 'Draw' : 'You’re out';
   const line = (who, won, len, secs) => who + ' ' + (won ? 'finished in ' + (+secs).toFixed(1) + 's' : len + ' left');
   $('cResultScore').textContent = line('You', vs.won, mine, vs.secs) + '  ·  ' + line(op.name, op.won, op.len, op.secs);
-  const wait = $('cResultWait');
+  const wait = $('cResultWait'), vote = vs.voteCols && res && res !== 'left', rm = $('cRematch');
+  // Lok, 19 Sep: a rematch needs both players to say yes within 30s, otherwise both go back to the menu
+  if (vote && !vs.voteEnd) { vs.voteEnd = Date.now() + 30000; vs.voteInt = setInterval(vsVoteTick, 250); vsVoteTick(); }
+  $('cRmPanel').hidden = !vote;
   wait.textContent = !res ? op.name + ' is still going with ' + op.len + ' left. They need fewer than ' + mine + ' to win.'
-    : res === 'left' ? 'The match is over.' : vs.role === 'guest' ? 'Waiting for ' + op.name + ' to start a rematch…' : '';
+    : res === 'left' ? op.name + ' left the match.'
+    : vote ? (vs.oppAgain ? op.name + ' wants a rematch' : vs.again ? 'Waiting for ' + op.name + '…' : '')
+    : vs.role === 'guest' ? 'Waiting for ' + op.name + ' to start a rematch…' : '';
   wait.hidden = !wait.textContent;
-  $('cRematch').hidden = !(res && res !== 'left' && vs.role === 'host');
+  rm.hidden = !(res && res !== 'left' && (vote || vs.role === 'host'));
+  rm.textContent = vote ? (vs.again ? 'Ready' : 'Play again') : 'Rematch';
+  rm.disabled = vote && !!vs.again;
+}
+function vsVoteTick() {
+  if (!vs || !vs.voteEnd) return;
+  const left = vs.voteEnd - Date.now();
+  $('cRmSecs').textContent = Math.max(0, Math.ceil(left / 1000));
+  $('cRmFill').style.width = Math.max(0, Math.min(100, left / 300)) + '%';
+  if (left <= 0) { vsLeave(); toast('No rematch — back to the menu'); }
+}
+function vsRematch() {
+  if (!vs) return;
+  if (!vs.voteCols) { vsStart(); return; }
+  vs.again = true; vsRenderResult(); vsTick();
 }
 function vsGone(msg) {
+  if (vs && vs.voteEnd) { vsLeave(); toast(msg); return; }  // they declined or timed out during the vote
   const running = mode === 'play' || mode === 'count';
   vsStop();
   if (running) mode = 'vsover';
@@ -1338,7 +1370,7 @@ $('cCodeIn').addEventListener('input', () => { const c = cleanCode($('cCodeIn').
 $('cCodeIn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); vsJoin(); } });
 $('cName').addEventListener('input', () => { const c = cleanName($('cName').value); if (c !== $('cName').value) $('cName').value = c; });
 $('cStart').addEventListener('click', vsStart);
-$('cRematch').addEventListener('click', vsStart);
+$('cRematch').addEventListener('click', vsRematch);
 $('cResultExit').addEventListener('click', vsLeave);
 const COPY_LABEL = isTouch && navigator.share ? 'Share join link' : 'Copy join link';   // phones open the share sheet
 $('cCopy').textContent = COPY_LABEL;
